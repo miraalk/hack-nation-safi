@@ -1,173 +1,148 @@
 # FarmFlow — HANDOFF
 
-Read this first, Martin. Everything here is fixed unless we both agree to change it. If something is unclear, make the simplest reasonable choice, write it at the bottom under "Decisions made while Mimi was away", and keep going.
+Read this first, Martin. We changed direction: we now build for **Noor**, the coffee farmer in the official Agriculture brief (Hack-Nation concept note, Annex B), not dairy. If something here is unclear, make the simplest reasonable choice, write it under "Decisions made while Mimi was away", and keep going.
 
-## 0. Locked decisions
+## 0. The idea in one paragraph
+
+Noor's coffee yields fell and she doesn't know why; she sells to a middleman because he lends to her during the year and she repays at harvest (side-selling study: four Rwandan coffee coops). FarmFlow runs three small models on the coop's Android phone at the washing station, offline: (1) it understands Noor's Kinyarwanda SMS describing the problem, (2) it classifies photos of her leaves, (3) it forecasts her next harvest so the coop can offer her input credit, which a coop officer approves. Noor orders by USSD on her basic phone and repays from her coop cherry payments, so she sells to the coop instead of the middleman.
+
+## 1. Locked decisions
 
 | Decision | Choice |
 | --- | --- |
-| Sector | Agriculture — dairy |
-| Setting | Rwandan dairy cooperative (simulated), Kinyarwanda + English |
-| Product | Input advances (feed, minerals, vet, etc.), never cash. Repaid by deduction from the next coop payout |
-| Hub | One coop-owned Android phone at the collection centre. Holds the data and runs the model locally |
-| Hub software | **TBD by Mimi:** Termux + Python, or native background Android app |
-| Agents | Any phone, SMS to the hub |
-| Farmers | Basic phone, USSD (Africa's Talking sandbox → Lambda) |
-| Cloud | AWS Lambda + DynamoDB. Relay only: sync + USSD. No model inference in the cloud |
-| Demo farmer | Aline Mukamana, `F001`. Second demo farmer with a sick cow: `F002` |
-| Demo "today" | 2026-10-03 (current cycle: 2026-09-16 → 2026-10-15) |
+| Sector / user | Agriculture / Noor (brief, Annex B) |
+| Setting | Coffee cooperative with a washing station, Rwandan highlands (fictional "Ondera Coffee Cooperative") |
+| Language | Kinyarwanda (named local language), English as second |
+| Product | Diagnosis + input credit (never cash), repaid from coop cherry payments |
+| Hub | One coop-owned Android phone at the washing station: data + all three models, offline |
+| Hub software | **Martin decides.** Test first whether the image model runs on the phone (see section 6) |
+| Noor | Basic phone: SMS (describe problem), USSD (credit, order) |
+| Weekend path (Should) | Daughter's smartphone runs the same leaf model offline in a cached web page; result goes to the hub by SMS (`LEAF F0001 leaf_rust 87`). Credit and records stay on the hub |
+| Why AI where | AI only for what rules can't do: free-text Kinyarwanda, leaf photos, harvest forecast. Credit amount, treatments and menus are plain rules on purpose |
+| Humans in the loop | Coop officer approves every advance by SMS; extension officer gets every "not sure" |
+| Cloud | AWS Lambda + DynamoDB, relay only: approved limits for USSD, orders back. No inference |
+| Demo farmers | `F0001` Noor Mukamana (rust in 2025, yields fell). `F0002` Jean Claude, new member (1 season → refer to officer) |
+| Demo "today" | 2026-10-03, off-season; next harvest is 2027 (March–July) |
 
-## 1. Data schema
-
-All files are in `/data`. Dates are ISO `YYYY-MM-DD`. Money is integer RWF. Litres have 1 decimal.
-
-**`coops.csv`**
-
-| Column | Type | Meaning |
-| --- | --- | --- |
-| coop_id | str | `C01`… |
-| name | str | Coop name (fictional) |
-| village | str | Where the collection centre is |
-| cycle_cutoff_day | int | Day of month the pay cycle closes (inclusive) |
-| avg_days_to_pay | int | Typical days from cutoff to payout |
-
-**`farmers.csv`**
-
-| Column | Type | Meaning |
-| --- | --- | --- |
-| farmer_id | str | `F0001`… (demo farmers are `F0001`–`F0060`) |
-| coop_id | str | FK to coops |
-| name | str | Fictional name |
-| phone | str | Placeholder number. Replace demo farmers' numbers with your test SIMs |
-| herd_size | int | Milking-age cows, 1–5 |
-| village | str | |
-| is_demo | int | 1 for the 60 named demo farmers |
-
-**`deliveries.csv`** — one row per farmer per day **they delivered**. A missing day = no delivery.
-
-| Column | Type | Meaning |
-| --- | --- | --- |
-| farmer_id | str | |
-| date | date | |
-| litres_delivered | float | Litres brought to the centre |
-| litres_rejected | float | Litres refused on quality (not paid) |
-| price_per_litre | int | RWF, set by the coop per cycle |
-
-**`payouts.csv`** — one row per coop per cycle.
-
-| Column | Type | Meaning |
-| --- | --- | --- |
-| coop_id | str | |
-| cycle_start | date | Day after previous cutoff |
-| cycle_end | date | Cutoff day (inclusive) |
-| payout_date | date | When the coop actually paid. Blank for the current, unpaid cycle |
-
-**`truth_events.csv`** — simulator ground truth. **Never use as a model feature.** Use it only to check that the drop flag catches real shocks and for the demo story.
-
-| Column | Type | Meaning |
-| --- | --- | --- |
-| farmer_id | str | |
-| cow | int | Cow index within the farmer's herd |
-| event | str | `calving` or `sickness` |
-| start | date | |
-| end | date | Blank for calving |
-
-## 2. The model (Martin owns)
-
-**Label:** for farmer *f* on day *t*, `target = sum(litres_delivered − litres_rejected)` for days *t+1* … *cycle_end* (net paid litres still to come this cycle). Only make examples where the whole horizon is inside the data.
-
-**Split:** by farmer (e.g. 80/20 of farmer_ids), never by row.
-
-**Baseline to beat:** `mean net litres over last 7 days × days remaining`.
-
-**Suggested features** (per farmer-day, computed only from data up to and including *t*):
-net litres last 3 / 7 / 14 days (mean), trend (last 7 vs previous 7), days remaining in cycle, delivery days in last 14, rejection rate last 30 days, herd_size, month, day of week, coop_id.
-
-**Outputs:** three quantile models (P10, P50, P90) + a drop flag.
-
-**Function the hub calls** (Python if Termux; same signature in Kotlin if native):
-
-```python
-predict(features: dict) -> {
-    "p10_litres": float,
-    "p50_litres": float,
-    "p90_litres": float,
-    "drop_flag": bool,   # P50 implies a daily rate well below the last-7-day rate
-}
-```
-
-Until the real model is ready, `hub/model_stub.py` returns the baseline with ±20% bands. Swapping in the real model must be a one-file change.
-
-Record for the submission: model file size, inference time on the hub phone, MAE vs baseline, P10–P90 coverage.
-
-## 3. Advance rule (Mimi owns, shared module)
+## 2. What's already built (run these first)
 
 ```
-accrued        = sum((delivered − rejected) × price) for this cycle up to today
-forecast_p10   = p10_litres × current price
-raw_limit      = ALPHA × (accrued + forecast_p10) − outstanding_advances
-limit          = clamp(raw_limit, 0, CAP), rounded down to nearest 1,000 RWF
+pip install numpy pandas scikit-learn        # training only
+python3 tests/test_shared.py                  # forecast, credit, recommendations on Noor + Jean Claude
+python3 language/train_text.py                # trains the text model from language/examples.csv
+python3 backend/check_ussd.py                 # wording files: length, placeholders, Kinyarwanda gaps
 ```
 
-Defaults: `ALPHA = 0.5`, `CAP = 150,000`. Both live in one config file, not buried in code.
+| Piece | File(s) | Status |
+| --- | --- | --- |
+| Synthetic coffee data | `data/generate_data.py`, `data/*.csv` | Done |
+| Harvest forecast | `shared/forecast.py`, `model/train_forecast.py`, `model/forecast_model.json` | Trained: MAE 147 kg vs 181 kg baseline (−18%), 88% of actuals above P10, 164 KB, 0.3 ms |
+| Advance rule + officer approval | `shared/advance.py`, `shared/config.py` | Done |
+| Recommendations | `shared/recommend.py`, `data/inputs.csv` | Done (prices illustrative) |
+| Diagnosis list | `shared/diagnoses.py` | Done; map BRACOL folder names in `VISION_CLASS_TO_DIAGNOSIS` |
+| Text model | `shared/text_model.py`, `language/train_text.py` | Pipeline done; needs Mimi's Kinyarwanda examples |
+| Vision model | `vision/train_vision.py`, `vision/predict.py` | **Written, never run** (no PyTorch or dataset in Claude's sandbox) |
+| Wording | `backend/ussd_script.json`, `hub/sms_script.json` | English done; Kinyarwanda by Mimi |
+| Hub SMS loop, Lambda, sync | `hub/`, `backend/` | **Martin** |
 
-## 4. Limit object (everything downstream reads this)
+Everything in `shared/` is standard-library Python: it runs on Termux, in Lambda, or as the reference for a Kotlin port.
+
+## 3. Data schema (`/data`, all synthetic, illustrative numbers)
+
+| File | Columns | Notes |
+| --- | --- | --- |
+| `coops.csv` | coop_id, name, district, avg_days_to_first_payment | 3 fictional coops |
+| `farmers.csv` | farmer_id, coop_id, name, phone, trees, avg_tree_age_2021, village, member_since, is_demo | Phones are placeholders: put your test SIMs on F0001/F0002 |
+| `deliveries.csv` | farmer_id, date, cherry_kg, rejected_kg, price_rwf_per_kg | Daily cherry deliveries, harvests 2021–2026 (Mar–Jul). Season = harvest year |
+| `payouts.csv` | coop_id, season, first_payment_rwf_per_kg, avg_days_to_first_payment, second_payment_rwf_per_kg, second_payment_date | Second payment blank if not yet paid |
+| `rainfall.csv` | district, season, preseason_rain_mm, anomaly | Synthetic; swap for CHIRPS if time |
+| `diagnoses.csv` | farmer_id, date, diagnosis, source | Confirmed diagnoses (only some rust cases get reported). The hub appends here |
+| `inputs.csv` | input_id, short_en, short_rw, name_en, category, unit, price_rwf, per_trees, rank, diagnoses, note_en | Catalogue; `per_trees` = one unit per N trees (0 = one unit) |
+| `truth_seasons.csv` | farmer_id, season, harvest_kg, delivered_kg, rust_severity | **Simulator ground truth. Never a model feature** |
+
+## 4. Contracts
+
+**Forecast** (`shared/forecast.py`): `build_features(...)` then `ForecastModel().predict(feats)` → `{"p10_kg", "p50_kg", "p90_kg"}` or `None` when fewer than 2 seasons of history.
+
+**Text** (`shared/text_model.py`): `TextModel().classify(text)` → `{"label", "confidence", "diagnosis", "sure"}`. `sure` is False below `TEXT_THRESHOLD` or for label `other`.
+
+**Vision** (`vision/predict.py`): `LeafModel().classify(path)` → `{"class", "confidence", "diagnosis", "sure", "quality"}`. Quality `too_dark` / `too_blurry` → ask for a new photo.
+
+**Credit** (`shared/advance.py`): `compute_limit(...)` → limit object with `status` = `insufficient_history` or `pending_approval`; `approve(lim, officer)` → `approved`. **Only approved limits sync to USSD.**
+
+```
+limit = clamp(ALPHA x P10_kg x first-payment price - outstanding, 0, CAP)   # ALPHA 0.3, CAP 150,000 RWF
+```
+
+**Recommendations** (`shared/recommend.py`): `recommend(limit, diagnosis, trees, catalogue)` → status `ok` / `refer` / `no_treatment` / `no_credit` / `too_low`, up to 3 items.
+
+**Limit object** (what syncs to the cloud):
 
 ```json
-{
-  "farmer_id": "F0001",
-  "cycle_end": "2026-10-15",
-  "payout_date_est": "2026-10-24",
-  "accrued_rwf": 152000,
-  "forecast_p10_rwf": 41000,
-  "forecast_p50_rwf": 52000,
-  "outstanding_rwf": 0,
-  "limit_rwf": 80000,
-  "drop_flag": false,
-  "computed_at": "2026-10-03T14:05:00Z",
-  "model_version": "v1"
-}
+{"farmer_id": "F0001", "season": 2027, "status": "approved", "approved_by": "officer-01",
+ "seasons_of_history": 3, "forecast_p10_kg": 1038, "forecast_p50_kg": 1329, "forecast_p90_kg": 1930,
+ "price_rwf_per_kg": 431, "outstanding_rwf": 0, "limit_rwf": 134000,
+ "computed_at": "2026-10-03T19:30:00Z", "model_version": "forecast-v1"}
 ```
 
-## 5. Agent SMS commands (Mimi writes wording, Martin implements parser)
+## 5. Hub SMS loop (Martin builds; wording in `hub/sms_script.json`)
 
-Replies must stay under 160 characters.
-
-| Agent texts | Hub does | Example reply |
+| Sender | Message | Hub does |
 | --- | --- | --- |
-| `D F0001 12.5` | Logs a delivery for today | `Logged: Aline 12.5L. Cycle total 152.0L.` |
-| `D F0001 12.5 R1.0` | Logs delivery with 1.0 L rejected | `Logged: Aline 12.5L (1.0L rejected). Cycle total 163.5L.` |
-| `L F0001` | Runs model, returns limit | `Aline: limit RWF 80,000. Payday ~24 Oct. 152L so far + forecast.` |
-| `HELP` | Lists commands | `D <id> <litres> [R<rej>] / L <id> / HELP` |
-| anything else | Error | `Not understood. Try: D F0001 12.5 or L F0001` |
+| A registered farmer (by phone number) | Free text, any language | Text model → `noor_likely_bring_leaves` (diagnoses needing a photo), `noor_likely_no_photo` (nutrient, drought, old trees) or `noor_unsure` + `extension_referral` |
+| Agent | `D F0001 25.5` / `D F0001 25.5 R1.0` | Log cherry delivery → `agent_logged` |
+| Agent | `L F0001` | Credit status |
+| Agent | Photo (taken on the hub itself) | Vision model → `agent_photo_result` / `agent_photo_unsure` / `agent_photo_quality`; save to `diagnoses.csv`; if sure → compute limit → `officer_request` (or `officer_no_history`) |
+| Coop officer | `OK 4821` / `NO 4821` | Approve/decline → `noor_credit_ready` → sync |
+| Farmer or a registered household number (daughter's phone) | `LEAF F0001 leaf_rust 87` (sent by the weekend web page) | Treat like a hub photo result: save to `diagnoses.csv` with source `household_phone`; if confidence ≥ threshold → compute limit → `officer_request`, and `noor_confirmed` to Noor; else `extension_referral` |
+| Unknown number | anything | Ignore or `not_registered` |
 
-Unknown farmer ID → `Farmer F9999 not found.`
+Photos: simplest is the agent taking them in the hub's camera app into a watched folder (e.g. `DCIM/FarmFlow/F0001_*.jpg`); the loop picks up new files and reads the farmer ID from the file name.
 
-## 6. Backend endpoints (Martin owns)
+## 6. Vision (Martin owns; highest risk)
 
-- `POST /sync` — body: `{"limits": [<limit object>, ...]}`. Response: `{"orders": [<order>, ...]}` (orders created since the hub's last sync).
-- `POST /ussd` — Africa's Talking callback (`sessionId`, `phoneNumber`, `text`). Returns `CON …` or `END …`. Looks up farmer by phone, reads latest synced limit, runs the survey, stores order with status `requested`.
+1. **First hour: prove a model runs on the hub phone.** Try `onnxruntime` on Termux with any small ONNX model. If it won't install, choose: native app with ONNX Runtime Mobile / TFLite, or run vision on a laptop beside the hub and say so honestly.
+2. Get BRACOL from Mimi (Mendeley Data). Put images in `vision/data/<class>/`. Check the licence.
+3. `python vision/train_vision.py --data vision/data --epochs 8` (add `--group-regex` if file names share a leaf ID). Colab GPU if the laptop is slow.
+4. Read `vision/vision_report.json`: accuracy, per-class, threshold. Map folder names in `shared/diagnoses.py`.
+5. Copy `leaf_model.int8.onnx` + `leaf_labels.json` to the hub; time one prediction.
+6. **Weekend web page (first extra, 3–4 h, only after step 5 works).** One self-contained page for the daughter's smartphone:
+   - camera capture (`<input type="file" accept="image/*" capture="environment">`)
+   - the same `leaf_model.int8.onnx` + `leaf_labels.json`, run with ONNX Runtime Web; same resize/crop/normalise, darkness/blur check and threshold as `vision/predict.py`
+   - result screen in Kinyarwanda, then an "SMS to coop" button: `sms:<hub number>?body=LEAF F0001 leaf_rust 87` (farmer ID typed once and remembered)
+   - a service worker so it works offline after one load; keep the total download to a few MB (this also meets the brief's "small enough to send over a weak connection" rule)
+   - add a `household_phones` field to the farmer record so the hub accepts `LEAF` messages from the daughter's number
 
-Order object: `{"order_id", "farmer_id", "items": [{"input_id", "qty"}], "total_rwf", "status", "created_at"}`.
+## 7. Cloud endpoints (Martin)
 
-## 7. Repo layout
+- `POST /sync` — body `{"limits": [<approved limit objects>]}` → response `{"orders": [...]}` created since last sync.
+- `POST /ussd` — Africa's Talking callback (`sessionId`, `phoneNumber`, `text`) → `CON …` / `END …`, wording from `backend/ussd_script.json`. Flow: language → main menu → credit (or `pending` / `no_history`) → `diagnosis_known` if the farmer has a confirmed diagnosis, else `problem` menu → `recommend` → `order_done`. Uses `shared/recommend.py`.
+
+Order object: `{"order_id", "farmer_id", "items": [{"input_id", "qty"}], "total_rwf", "status": "requested", "created_at"}`.
+
+## 8. Writing the Kinyarwanda examples (Mimi)
+
+`language/examples.csv`: columns `text, label, lang, author, split`.
+
+- Labels: `yellow_orange_spots, brown_spots, leaf_tunnels, berries_black_drop, insects, leaves_pale, wilting_dry, old_low_yield, other`.
+- ~30 per label, as farmers really text: short, misspellings, no apostrophes, Kinyarwanda–English mixing. `lang` = rw / en / mixed.
+- `other` matters: greetings, price questions, payment questions, unrelated problems.
+- Test set: ask someone else to write ~50 messages, mark `split` = test. Never train on them.
+- The 46 English rows from `author=seed` were written by Claude to test the pipeline; keep or delete them.
+
+## 9. Repo layout
 
 ```
-/data      generator + CSVs
-/model     training, evaluation, export
-/hub       SMS loop, local SQLite, sync, model_stub.py, advance rule
-/backend   Lambda: /sync + /ussd
-/docs      README, video script
+/data      generator + CSVs + input catalogue
+/shared    config, diagnoses, data loading, forecast, text model, advance rule, recommendations
+/model     forecast training + exported model + report
+/language  Kinyarwanda examples + text training + exported model
+/vision    leaf model training + hub prediction
+/hub       SMS loop (Martin), sms_script.json
+/backend   Lambda (Martin), ussd_script.json, check_ussd.py
+/tests     checks on the demo farmers
+/docs      write-up, video script
 ```
-
-One repo, small commits, commit messages that say what changed.
-
-## 8. Martin's first hour
-
-1. Read this file.
-2. `python data/generate_data.py` (already run; CSVs are in `/data`). Look at `F0001` and `F0002`.
-3. Build features + labels, train baseline, then quantile models.
-4. Target: hub answers `L F0001` with the real model and data off by about T+9.
 
 ## Decisions made while Mimi was away
 
