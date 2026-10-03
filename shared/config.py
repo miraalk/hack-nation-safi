@@ -7,7 +7,7 @@ CAP_RWF = 300_000      # raised with real prices: one bag of subsidised NPK is ~
 ROUND_TO_RWF = 1_000
 
 # Confidence thresholds: below these the model says "not sure, ask a person".
-TEXT_THRESHOLD = 0.55
+TEXT_THRESHOLD = 0.30   # from cross-validation on 92 examples (Kinyarwanda: answers 70%, 91% correct). Re-tune after more examples
 VISION_THRESHOLD = 0.70
 
 # Recommendations

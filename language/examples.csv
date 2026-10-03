@@ -45,3 +45,49 @@ hello,other,en,seed,train
 how much is the price this year,other,en,seed,train
 my cow is sick,other,en,seed,train
 thank you,other,en,seed,train
+amababi y'ikawa yanjye afite utudomo tw'umuhondo,yellow_orange_spots,rw,claude-draft,train
+munsi y'amababi y'ikawa hariho ifu isa n'ingese,yellow_orange_spots,rw,claude-draft,train
+amababi afite ibara ry'ingese kandi arimo kugwa,yellow_orange_spots,rw,claude-draft,train
+amababi agira amabara y'umuhondo hanyuma akagwa,yellow_orange_spots,rw,claude-draft,train
+munsi y'amababi hasa n'ingese,yellow_orange_spots,rw,claude-draft,train
+ikawa yanjye ifite utudomo dusa n'ingese,yellow_orange_spots,rw,claude-draft,train
+amababi afite utudomo tw'ikigina hagati hasa n'umweru,brown_spots,rw,claude-draft,train
+amababi afite amabara y'ikigina yiburungushuye,brown_spots,rw,claude-draft,train
+utudomo tw'ikigina ku mababi no ku mbuto,brown_spots,rw,claude-draft,train
+amabara y'ikigina cyijimye ku mababi y'ikawa,brown_spots,rw,claude-draft,train
+amababi y'ikawa afite utudomo tw'ikigina,brown_spots,rw,claude-draft,train
+hari ikintu kirya imbere mu mababi kigasiga imirongo,leaf_tunnels,rw,claude-draft,train
+amababi afite ahantu humye h'ikigina hameze nk'inzira,leaf_tunnels,rw,claude-draft,train
+hari udusimba duto imbere mu ibabi,leaf_tunnels,rw,claude-draft,train
+uruhu rw'ibabi rurashishuka kandi rufite inzira,leaf_tunnels,rw,claude-draft,train
+imirongo yera n'udusebe ku mababi,leaf_tunnels,rw,claude-draft,train
+imbuto zirirabura zikagwa,berries_black_drop,rw,claude-draft,train
+imbuto z'ikawa zitarahisha ziragwa,berries_black_drop,rw,claude-draft,train
+utudomo tw'umukara twinjiye ku mbuto,berries_black_drop,rw,claude-draft,train
+imbuto z'ikawa yanjye ziraboze,berries_black_drop,rw,claude-draft,train
+imbuto zifite imyobo kandi ziragwa,berries_black_drop,rw,claude-draft,train
+hari udukoko ku ikawa yanjye,insects,rw,claude-draft,train
+udukoko tw'icyatsi kibisi ku mashami,insects,rw,claude-draft,train
+udukoko turimo kunyunyuza imbuto,insects,rw,claude-draft,train
+udukoko duto twinshi ku biti by'ikawa,insects,rw,claude-draft,train
+udusimba ku biti by'ikawa,insects,rw,claude-draft,train
+amababi yose yahindutse umuhondo,leaves_pale,rw,claude-draft,train
+igiti cyose gisa n'icyatsi cyeruruka aho kuba icyatsi cyijimye,leaves_pale,rw,claude-draft,train
+amababi ashaje arimo guhinduka umuhondo uhereye ku nkombe,leaves_pale,rw,claude-draft,train
+ikawa yanjye isa n'inanutse kandi yeruruka,leaves_pale,rw,claude-draft,train
+amababi arimo guhinduka umuhondo nta tudomo,leaves_pale,rw,claude-draft,train
+amababi yumye kandi arizinga,wilting_dry,rw,claude-draft,train
+ibiti biraraba kubera ko nta mvura,wilting_dry,rw,claude-draft,train
+amababi arunamye kubera izuba,wilting_dry,rw,claude-draft,train
+ubutaka bwumye cyane kandi ibiti birimo gupfa,wilting_dry,rw,claude-draft,train
+izuba riri kwica ikawa yanjye,wilting_dry,rw,claude-draft,train
+ibiti byanjye birashaje cyane kandi bitanga ikawa nke,old_low_yield,rw,claude-draft,train
+ikawa itanga umusaruro muke buri mwaka,old_low_yield,rw,claude-draft,train
+ibiti ni birebire kandi birashaje bifite imbuto nke,old_low_yield,rw,claude-draft,train
+umusaruro waragabanutse ariko ibiti bisa neza,old_low_yield,rw,claude-draft,train
+umusaruro wanjye waragabanutse kandi sinzi impamvu,old_low_yield,rw,claude-draft,train
+amafaranga azishyurwa ryari,other,rw,claude-draft,train
+muraho,other,rw,claude-draft,train
+igiciro ni angahe uyu mwaka,other,rw,claude-draft,train
+inka yanjye irarwaye,other,rw,claude-draft,train
+murakoze,other,rw,claude-draft,train
