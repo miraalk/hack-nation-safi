@@ -36,6 +36,10 @@ TODAY = date(2026, 10, 3)
 N_FARMERS = 2000
 N_DEMO = 60
 
+# Minimum farm-gate price for cherry, RWF/kg. 2024-2026 from NAEB announcements
+# (allAfrica, Jan 2025 and Jan 2026); 2021-2023 are illustrative assumptions.
+FLOOR_PRICE = {2021: 350, 2022: 380, 2023: 410, 2024: 480, 2025: 600, 2026: 750}
+
 COOPS = [
     # id, name, district, avg days to first payment, base cherry price RWF/kg
     ("C01", "Ondera Coffee Cooperative", "Nyamasheke", 10, 430),
@@ -93,11 +97,13 @@ def main(n_farmers=N_FARMERS, seed=42, out_dir=None):
                               "anomaly": round(anom, 3)})
 
     # ---- prices and payouts per coop per season
+    # 2024-2026: NAEB minimum cherry prices (RWF 480 / 600 / 750 per kg); coops in this
+    # simulation pay the minimum plus a small premium. 2021-2023: illustrative assumptions.
     price, payout_rows = {}, []
     for c in coops.itertuples():
-        p = c.base_price
         for s in SEASONS:
-            p = int(round(np.clip(p + rng.normal(0, 15), c.base_price - 60, c.base_price + 60)))
+            premium = int(round(np.clip(rng.normal(0, 15), -20, 40))) + (c.base_price - 410) // 2
+            p = FLOOR_PRICE[s] + max(0, premium)
             second = int(round(rng.uniform(40, 120)))
             price[(c.coop_id, s)] = p
             payout_rows.append({
@@ -129,7 +135,7 @@ def main(n_farmers=N_FARMERS, seed=42, out_dir=None):
         if i == 0:   # Noor: good history, rust in 2025 -> yields fell in 2026
             name, trees, age0, mgmt, bien, loyalty = "Noor Mukamana", 1500, 9.0, 2.1, 0.08, 0.62
             rust_force = {2021: 0.0, 2022: 0.0, 2023: 0.0, 2024: 0.0, 2025: 0.45, 2026: 0.30}
-        if i == 1:   # new member: one season only -> "talk to the coop officer"
+        if i == 1:   # new member: one season only -> "talk to coop staff"
             name, first_season = "Jean Claude Habimana", 2026
 
         farmer_rows.append({

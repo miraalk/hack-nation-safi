@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "forecast_model.json"
-MIN_HISTORY_SEASONS = 2   # fewer than this -> no forecast, refer to coop officer
+MIN_HISTORY_SEASONS = 2   # fewer than this -> no forecast, refer to coop staff
 
 FEATURES = [
     "d1", "d2", "d3", "mean3", "trend", "n_hist", "trees", "tree_age",
@@ -25,7 +25,7 @@ def build_features(season_totals, last_season, trees, avg_tree_age_2021,
     """Features to forecast season last_season+1, using data up to last_season.
 
     season_totals: {season: paid_kg delivered to the coop}
-    diagnoses: [(date, diagnosis), ...] confirmed at the hub or by the extension officer
+    diagnoses: [(date, diagnosis), ...] confirmed at the hub (or historically by an extension officer)
     """
     d = [season_totals.get(last_season - k, 0.0) for k in range(3)]
     hist = [x for x in d if x > 0]

@@ -1,92 +1,123 @@
 {
   "_readme": [
     "Every SMS the hub sends. The hub reads this file; edit wording here, not in code.",
-    "Messages to Noor need 'rw' (and 'en'). Messages to staff (agent, officers) can stay English, but fill 'rw' if they prefer it.",
+    "Messages to Noor need 'rw' (and 'en'). Messages to coop staff (one person: photos, approvals, follow-ups) can stay English, but 'rw' is drafted too.",
     "Keep {placeholders} exactly as written. One SMS is 160 characters; longer ones split into 2 and cost double.",
-    "Check with: python3 backend/check_ussd.py"
+    "Check with: python3 backend/check_ussd.py",
+    "The Kinyarwanda ('rw') text is a DRAFT written by Claude. Mimi must check and correct every line before use."
   ],
   "diagnosis_names": {
-    "leaf_rust":      {"en": "leaf rust",          "rw": ""},
-    "brown_eye_spot": {"en": "brown eye spot",     "rw": ""},
-    "leaf_miner":     {"en": "leaf miner",         "rw": ""},
-    "berry_disease":  {"en": "berry disease",      "rw": ""},
-    "pests":          {"en": "insect pests",       "rw": ""},
-    "nutrient":       {"en": "nutrient shortage",  "rw": ""},
-    "drought":        {"en": "drought stress",     "rw": ""},
-    "old_trees":      {"en": "old trees",          "rw": ""},
-    "healthy":        {"en": "no disease seen",    "rw": ""},
-    "unknown":        {"en": "not sure",           "rw": ""}
+    "leaf_rust": {
+      "en": "leaf rust",
+      "rw": "ingese y'amababi"
+    },
+    "brown_eye_spot": {
+      "en": "brown eye spot",
+      "rw": "utudomo tw'ikigina"
+    },
+    "leaf_miner": {
+      "en": "leaf miner",
+      "rw": "udusimba two mu mababi"
+    },
+    "berry_disease": {
+      "en": "berry disease",
+      "rw": "indwara y'imbuto"
+    },
+    "pests": {
+      "en": "insect pests",
+      "rw": "udukoko"
+    },
+    "nutrient": {
+      "en": "nutrient shortage",
+      "rw": "kubura ifumbire"
+    },
+    "drought": {
+      "en": "drought stress",
+      "rw": "izuba ryinshi"
+    },
+    "old_trees": {
+      "en": "old trees",
+      "rw": "ibiti bishaje"
+    },
+    "healthy": {
+      "en": "no disease seen",
+      "rw": "nta ndwara ibonetse"
+    },
+    "unknown": {
+      "en": "not sure",
+      "rw": "ntibizwi neza"
+    }
   },
   "messages": {
     "noor_likely_bring_leaves": {
       "to": "farmer",
       "en": "FarmFlow: this sounds like {diagnosis}. Please bring 5 affected leaves to {centre} so we can check.",
-      "rw": ""
+      "rw": "FarmFlow: birasa na {diagnosis}. Zana amababi 5 arwaye kuri {centre} tuyasuzume."
     },
     "noor_likely_no_photo": {
       "to": "farmer",
       "en": "FarmFlow: this sounds like {diagnosis}. Dial {ussd} to see inputs you can get on credit.",
-      "rw": ""
+      "rw": "FarmFlow: birasa na {diagnosis}. Kanda {ussd} urebe inyongeramusaruro wahabwa ku nguzanyo."
     },
     "noor_unsure": {
       "to": "farmer",
-      "en": "FarmFlow: we are not sure what this is. Your extension officer will contact you. You can also bring leaves to {centre}.",
-      "rw": ""
+      "en": "FarmFlow: we are not sure what this is. Coop staff will contact you. You can also bring leaves to {centre}.",
+      "rw": "FarmFlow: ntitwizeye icyo ari cyo. Umukozi wa koperative azaguhamagara. Ushobora no kuzana amababi kuri {centre}."
     },
     "noor_confirmed": {
       "to": "farmer",
       "en": "FarmFlow: the washing station confirmed {diagnosis}. Your coop is reviewing input credit for you.",
-      "rw": ""
+      "rw": "FarmFlow: isuzuma ryemeje ko ari {diagnosis}. Koperative yawe iri gusuzuma inguzanyo yawe."
     },
     "noor_credit_ready": {
       "to": "farmer",
       "en": "FarmFlow: your input credit of RWF {limit} is ready. Dial {ussd} to order.",
-      "rw": ""
+      "rw": "FarmFlow: inguzanyo yawe ya RWF {limit} yabonetse. Kanda {ussd} usabe."
     },
     "agent_photo_result": {
-      "to": "agent",
-      "en": "Leaf: {diagnosis} ({conf}% sure). Suggested: {bundle}. Credit proposal sent to coop officer.",
-      "rw": ""
+      "to": "coop_staff",
+      "en": "Leaf: {diagnosis} ({conf}% sure). Suggested: {bundle}. Credit proposal follows.",
+      "rw": "Ibabi: {diagnosis} ({conf}%). Tugusaba: {bundle}. Icyifuzo cy'inguzanyo kirakurikira."
     },
     "agent_photo_unsure": {
-      "to": "agent",
-      "en": "Not sure ({conf}%). Sent to the extension officer. Do not sell treatment yet.",
-      "rw": ""
+      "to": "coop_staff",
+      "en": "Not sure ({conf}%). No treatment suggested. Keep the leaves and follow up with the farmer.",
+      "rw": "Ntibyizewe ({conf}%). Nta muti dusaba. Bika amababi ukurikirane umuhinzi."
     },
     "agent_photo_quality": {
-      "to": "agent",
+      "to": "coop_staff",
       "en": "Photo {problem}. Please take it again in daylight, leaf filling the frame.",
-      "rw": ""
+      "rw": "Ifoto: {problem}. Ongera ufotore ku manywa, ibabi ryuzuye ifoto."
     },
     "agent_logged": {
-      "to": "agent",
+      "to": "coop_staff",
       "en": "Logged: {name} {kg}kg cherry. Season total {total_kg}kg.",
-      "rw": ""
+      "rw": "Byanditswe: {name} {kg}kg z'ikawa. Igiteranyo cy'igihembwe {total_kg}kg."
     },
     "agent_help": {
-      "to": "agent",
+      "to": "coop_staff",
       "en": "D <id> <kg> [R<rejected kg>] log cherry / L <id> credit status / HELP",
-      "rw": ""
+      "rw": "D <id> <kg> [R<kg zanzwe>] andika ikawa / L <id> inguzanyo / HELP"
     },
     "agent_error": {
-      "to": "agent",
+      "to": "coop_staff",
       "en": "Not understood. Try: D F0001 25.5 or L F0001",
-      "rw": ""
+      "rw": "Ntibyumvikanye. Gerageza: D F0001 25.5 cyangwa L F0001"
     },
     "officer_request": {
-      "to": "officer",
+      "to": "coop_staff",
       "en": "FarmFlow: {name} {farmer_id}, {diagnosis}. Proposed credit RWF {limit} (low forecast {p10} kg). Reply OK {code} or NO {code}",
-      "rw": ""
+      "rw": "FarmFlow: {name} {farmer_id}, {diagnosis}. Inguzanyo RWF {limit} (umusaruro muke uteganyijwe {p10} kg). Subiza OK {code} cg NO {code}"
     },
     "officer_no_history": {
-      "to": "officer",
+      "to": "coop_staff",
       "en": "FarmFlow: {name} {farmer_id} asked for input credit but has under 2 seasons of deliveries. Please follow up.",
-      "rw": ""
+      "rw": "FarmFlow: {name} {farmer_id} yasabye inguzanyo ariko afite ibihembwe biri munsi ya 2. Mumukurikirane."
     },
     "extension_referral": {
-      "to": "extension",
-      "en": "FarmFlow referral: {name} ({village}, {phone}) wrote: {message}. Model not sure. Please follow up.",
-      "rw": ""
+      "to": "coop_staff",
+      "en": "FarmFlow: {name} ({village}, {phone}) wrote: {message}. Model not sure. Please follow up.",
+      "rw": "FarmFlow: {name} ({village}, {phone}) yanditse: {message}. Sisitemu ntiyizeye. Mumukurikirane."
     }
   }
 }

@@ -4,7 +4,8 @@
     "Fill in every 'rw'. Keep the {placeholders} exactly as written; you can move them around.",
     "\\n is a new line. Keep options in the same order: the code maps option numbers to the 'options' keys.",
     "'CON' or 'END' is added by the code: CON waits for a reply, END closes the session.",
-    "Check with: python3 backend/check_ussd.py   (aim for 160 characters or fewer per screen)"
+    "Check with: python3 backend/check_ussd.py   (aim for 160 characters or fewer per screen)",
+    "The Kinyarwanda ('rw') text is a DRAFT written by Claude. Mimi must check and correct every line before use."
   ],
   "screens": {
     "language": {
@@ -15,73 +16,80 @@
     "main_menu": {
       "type": "CON",
       "en": "FarmFlow - Hi {name}\n1. My input credit\n2. Get inputs",
-      "rw": ""
+      "rw": "FarmFlow - Muraho {name}\n1. Inguzanyo y'inyongeramusaruro\n2. Saba inyongeramusaruro"
     },
     "credit": {
       "type": "CON",
       "en": "Input credit: RWF {limit}\nApproved by your coop.\nRepaid from your {season} cherry payments.\nUpdated {as_of}\n1. Get inputs\n0. Back",
-      "rw": ""
+      "rw": "Inguzanyo yawe: RWF {limit}\nYemejwe na koperative.\nIzishyurwa mu mafaranga y'ikawa ya {season}.\nYavuguruwe {as_of}\n1. Saba inyongeramusaruro\n0. Subira inyuma"
     },
     "pending": {
       "type": "END",
       "en": "Your coop officer is reviewing your input credit. We will SMS you when it is ready.",
-      "rw": ""
+      "rw": "Umukozi wa koperative ari gusuzuma inguzanyo yawe. Tuzakoherereza ubutumwa niyemezwa."
     },
     "no_history": {
       "type": "END",
-      "en": "Input credit needs 2 seasons of cherry deliveries to the coop. Please talk to your coop officer.",
-      "rw": ""
+      "en": "Input credit needs 2 seasons of cherry deliveries to the coop. Please talk to coop staff.",
+      "rw": "Inguzanyo isaba ibihembwe 2 byo kugemura ikawa kuri koperative. Vugana n'umukozi wa koperative."
     },
     "diagnosis_known": {
       "type": "CON",
       "en": "Last check: {diagnosis}\nSuggested: {bundle}\nRWF {total} of {limit}\n1. Order\n2. Other problem\n0. Cancel",
-      "rw": ""
+      "rw": "Isuzuma riheruka: {diagnosis}\nTugusaba: {bundle}\nRWF {total} kuri {limit}\n1. Saba\n2. Ikindi kibazo\n0. Hagarika"
     },
     "problem": {
       "type": "CON",
-      "options": ["needs_photo", "needs_photo", "nutrient", "drought", "old_trees", "unknown"],
+      "options": [
+        "needs_photo",
+        "needs_photo",
+        "nutrient",
+        "drought",
+        "old_trees",
+        "unknown"
+      ],
       "en": "What is the problem?\n1. Spots on leaves\n2. Insects or damaged berries\n3. Pale yellow leaves\n4. Dry, wilting trees\n5. Old trees, low harvest\n6. Not sure",
-      "rw": ""
+      "rw": "Ikibazo ni iki?\n1. Utudomo ku mababi\n2. Udukoko/imbuto zangiritse\n3. Amababi y'umuhondo\n4. Ibiti byumye\n5. Ibiti bishaje\n6. Simbizi"
     },
     "needs_photo": {
       "type": "END",
       "en": "Please bring 5 affected leaves or berries to {centre} so we can check them before you buy treatment.",
-      "rw": ""
+      "rw": "Zana amababi cyangwa imbuto 5 birwaye kuri {centre} tubisuzume mbere yo kugura umuti."
     },
     "recommend": {
       "type": "CON",
       "en": "Suggested: {bundle}\nRWF {total} of {limit}\n1. Order\n2. Start again\n0. Cancel",
-      "rw": ""
+      "rw": "Tugusaba: {bundle}\nRWF {total} kuri {limit}\n1. Saba\n2. Ongera utangire\n0. Hagarika"
     },
     "order_done": {
       "type": "END",
       "en": "Order sent. Collect at {centre}. RWF {total} will come off your next cherry payments.",
-      "rw": ""
+      "rw": "Ubusabe bwoherejwe. Uzabifatire kuri {centre}. RWF {total} azakurwa ku mafaranga y'ikawa ukurikiraho."
     },
     "refer": {
       "type": "END",
-      "en": "We are not sure what this is. Your extension officer will contact you.",
-      "rw": ""
+      "en": "We are not sure what this is. Coop staff will contact you.",
+      "rw": "Ntitwizeye neza icyo ari cyo. Umukozi wa koperative azaguhamagara."
     },
     "cancelled": {
       "type": "END",
       "en": "No order placed. Dial again anytime.",
-      "rw": ""
+      "rw": "Nta busabe bwakozwe. Ushobora kongera gukanda igihe cyose."
     },
     "too_low": {
       "type": "END",
-      "en": "Your credit (RWF {limit}) is below the cheapest treatment (RWF {cheapest}). Talk to your coop officer.",
-      "rw": ""
+      "en": "Your credit (RWF {limit}) is below the cheapest treatment (RWF {cheapest}). Talk to coop staff.",
+      "rw": "Inguzanyo yawe (RWF {limit}) ntigera ku muti uhendutse (RWF {cheapest}). Vugana n'umukozi wa koperative."
     },
     "not_registered": {
       "type": "END",
       "en": "This number is not registered with FarmFlow. Please visit your washing station.",
-      "rw": ""
+      "rw": "Iyi nimero ntiyanditse muri FarmFlow. Gana uruganda rw'ikawa rwawe."
     },
     "invalid": {
       "type": "PREFIX",
       "en": "Invalid choice.\n",
-      "rw": ""
+      "rw": "Ihitamo ritemewe.\n"
     }
   }
 }

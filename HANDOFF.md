@@ -4,7 +4,7 @@ Read this first, Martin. We changed direction: we now build for **Noor**, the co
 
 ## 0. The idea in one paragraph
 
-Noor's coffee yields fell and she doesn't know why; she sells to a middleman because he lends to her during the year and she repays at harvest (side-selling study: four Rwandan coffee coops). FarmFlow runs three small models on the coop's Android phone at the washing station, offline: (1) it understands Noor's Kinyarwanda SMS describing the problem, (2) it classifies photos of her leaves, (3) it forecasts her next harvest so the coop can offer her input credit, which a coop officer approves. Noor orders by USSD on her basic phone and repays from her coop cherry payments, so she sells to the coop instead of the middleman.
+Noor's coffee yields fell and she doesn't know why; she sells to a middleman because he lends to her during the year and she repays at harvest (side-selling study: four Rwandan coffee coops). FarmFlow runs three small models on the coop's Android phone at the washing station, offline: (1) it understands Noor's Kinyarwanda SMS describing the problem, (2) it classifies photos of her leaves, (3) it forecasts her next harvest so the coop can offer her input credit, which coop staff approve. Noor orders by USSD on her basic phone and repays from her coop cherry payments, so she sells to the coop instead of the middleman.
 
 ## 1. Locked decisions
 
@@ -19,9 +19,9 @@ Noor's coffee yields fell and she doesn't know why; she sells to a middleman bec
 | Noor | Basic phone: SMS (describe problem), USSD (credit, order) |
 | Weekend path (Should) | Daughter's smartphone runs the same leaf model offline in a cached web page; result goes to the hub by SMS (`LEAF F0001 leaf_rust 87`). Credit and records stay on the hub |
 | Why AI where | AI only for what rules can't do: free-text Kinyarwanda, leaf photos, harvest forecast. Credit amount, treatments and menus are plain rules on purpose |
-| Humans in the loop | Coop officer approves every advance by SMS; extension officer gets every "not sure" |
+| Humans in the loop | **One coop staff member** at the washing station: photographs leaves, approves every advance by SMS, follows up every "not sure". (Production: separate approver, and route crop questions to the district extension officer.) |
 | Cloud | AWS Lambda + DynamoDB, relay only: approved limits for USSD, orders back. No inference |
-| Demo farmers | `F0001` Noor Mukamana (rust in 2025, yields fell). `F0002` Jean Claude, new member (1 season → refer to officer) |
+| Demo farmers | `F0001` Noor Mukamana (rust in 2025, yields fell). `F0002` Jean Claude, new member (1 season → refer to coop staff) |
 | Demo "today" | 2026-10-03, off-season; next harvest is 2027 (March–July) |
 
 ## 2. What's already built (run these first)
@@ -37,12 +37,12 @@ python3 backend/check_ussd.py                 # wording files: length, placehold
 | --- | --- | --- |
 | Synthetic coffee data | `data/generate_data.py`, `data/*.csv` | Done |
 | Harvest forecast | `shared/forecast.py`, `model/train_forecast.py`, `model/forecast_model.json` | Trained: MAE 147 kg vs 181 kg baseline (−18%), 88% of actuals above P10, 164 KB, 0.3 ms |
-| Advance rule + officer approval | `shared/advance.py`, `shared/config.py` | Done |
+| Advance rule + coop staff approval | `shared/advance.py`, `shared/config.py` | Done |
 | Recommendations | `shared/recommend.py`, `data/inputs.csv` | Done (prices illustrative) |
 | Diagnosis list | `shared/diagnoses.py` | Done; map BRACOL folder names in `VISION_CLASS_TO_DIAGNOSIS` |
 | Text model | `shared/text_model.py`, `language/train_text.py` | Pipeline done; needs Mimi's Kinyarwanda examples |
 | Vision model | `vision/train_vision.py`, `vision/predict.py` | **Written, never run** (no PyTorch or dataset in Claude's sandbox) |
-| Wording | `backend/ussd_script.json`, `hub/sms_script.json` | English done; Kinyarwanda by Mimi |
+| Wording | `backend/ussd_script.json`, `hub/sms_script.json` | English done; Kinyarwanda drafted by Claude, **Mimi checking** |
 | Hub SMS loop, Lambda, sync | `hub/`, `backend/` | **Martin** |
 
 Everything in `shared/` is standard-library Python: it runs on Termux, in Lambda, or as the reference for a Kotlin port.
@@ -53,11 +53,11 @@ Everything in `shared/` is standard-library Python: it runs on Termux, in Lambda
 | --- | --- | --- |
 | `coops.csv` | coop_id, name, district, avg_days_to_first_payment | 3 fictional coops |
 | `farmers.csv` | farmer_id, coop_id, name, phone, trees, avg_tree_age_2021, village, member_since, is_demo | Phones are placeholders: put your test SIMs on F0001/F0002 |
-| `deliveries.csv` | farmer_id, date, cherry_kg, rejected_kg, price_rwf_per_kg | Daily cherry deliveries, harvests 2021–2026 (Mar–Jul). Season = harvest year |
+| `deliveries.csv` | farmer_id, date, cherry_kg, rejected_kg, price_rwf_per_kg | Daily cherry deliveries, harvests 2021–2026 (Mar–Jul). Season = harvest year. Prices 2024–2026 follow NAEB minimums (480 / 600 / 750 RWF/kg) |
 | `payouts.csv` | coop_id, season, first_payment_rwf_per_kg, avg_days_to_first_payment, second_payment_rwf_per_kg, second_payment_date | Second payment blank if not yet paid |
 | `rainfall.csv` | district, season, preseason_rain_mm, anomaly | Synthetic; swap for CHIRPS if time |
 | `diagnoses.csv` | farmer_id, date, diagnosis, source | Confirmed diagnoses (only some rust cases get reported). The hub appends here |
-| `inputs.csv` | input_id, short_en, short_rw, name_en, category, unit, price_rwf, per_trees, rank, diagnoses, note_en | Catalogue; `per_trees` = one unit per N trees (0 = one unit) |
+| `inputs.csv` | input_id, short_en, short_rw, name_en, category, unit, price_rwf, per_trees, rank, diagnoses, note_en, price_source | Catalogue; `per_trees` = one unit per N trees (0 = one unit). NPK price is real (subsidised farmer price); others illustrative |
 | `truth_seasons.csv` | farmer_id, season, harvest_kg, delivered_kg, rust_severity | **Simulator ground truth. Never a model feature** |
 
 ## 4. Contracts
@@ -68,10 +68,10 @@ Everything in `shared/` is standard-library Python: it runs on Termux, in Lambda
 
 **Vision** (`vision/predict.py`): `LeafModel().classify(path)` → `{"class", "confidence", "diagnosis", "sure", "quality"}`. Quality `too_dark` / `too_blurry` → ask for a new photo.
 
-**Credit** (`shared/advance.py`): `compute_limit(...)` → limit object with `status` = `insufficient_history` or `pending_approval`; `approve(lim, officer)` → `approved`. **Only approved limits sync to USSD.**
+**Credit** (`shared/advance.py`): `compute_limit(...)` → limit object with `status` = `insufficient_history` or `pending_approval`; `approve(lim, approver)` → `approved`. **Only approved limits sync to USSD.**
 
 ```
-limit = clamp(ALPHA x P10_kg x first-payment price - outstanding, 0, CAP)   # ALPHA 0.3, CAP 150,000 RWF
+limit = clamp(ALPHA x P10_kg x first-payment price - outstanding, 0, CAP)   # ALPHA 0.3, CAP 300,000 RWF
 ```
 
 **Recommendations** (`shared/recommend.py`): `recommend(limit, diagnosis, trees, catalogue)` → status `ok` / `refer` / `no_treatment` / `no_credit` / `too_low`, up to 3 items.
@@ -79,25 +79,27 @@ limit = clamp(ALPHA x P10_kg x first-payment price - outstanding, 0, CAP)   # AL
 **Limit object** (what syncs to the cloud):
 
 ```json
-{"farmer_id": "F0001", "season": 2027, "status": "approved", "approved_by": "officer-01",
+{"farmer_id": "F0001", "season": 2027, "status": "approved", "approved_by": "staff-01",
  "seasons_of_history": 3, "forecast_p10_kg": 1038, "forecast_p50_kg": 1329, "forecast_p90_kg": 1930,
- "price_rwf_per_kg": 431, "outstanding_rwf": 0, "limit_rwf": 134000,
+ "price_rwf_per_kg": 769, "outstanding_rwf": 0, "limit_rwf": 239000,
  "computed_at": "2026-10-03T19:30:00Z", "model_version": "forecast-v1"}
 ```
 
 ## 5. Hub SMS loop (Martin builds; wording in `hub/sms_script.json`)
 
+There is **one coop staff member** in the prototype: messages tagged `coop_staff` (photo results, approval requests, referrals) all go to one number. Message keys still say `agent_` / `officer_` / `extension_`; that's just naming.
+
 | Sender | Message | Hub does |
 | --- | --- | --- |
-| A registered farmer (by phone number) | Free text, any language | Text model → `noor_likely_bring_leaves` (diagnoses needing a photo), `noor_likely_no_photo` (nutrient, drought, old trees) or `noor_unsure` + `extension_referral` |
-| Agent | `D F0001 25.5` / `D F0001 25.5 R1.0` | Log cherry delivery → `agent_logged` |
-| Agent | `L F0001` | Credit status |
-| Agent | Photo (taken on the hub itself) | Vision model → `agent_photo_result` / `agent_photo_unsure` / `agent_photo_quality`; save to `diagnoses.csv`; if sure → compute limit → `officer_request` (or `officer_no_history`) |
-| Coop officer | `OK 4821` / `NO 4821` | Approve/decline → `noor_credit_ready` → sync |
+| A registered farmer (by phone number) | Free text, any language | Text model → `noor_likely_bring_leaves` (diagnoses needing a photo), `noor_likely_no_photo` (nutrient, drought, old trees) or `noor_unsure` + `extension_referral` (goes to coop staff) |
+| Coop staff (optional) | `D F0001 25.5` / `D F0001 25.5 R1.0` | Log cherry delivery → `agent_logged`. Optional: demo data is preloaded, and real coops already record weights |
+| Coop staff | `L F0001` | Credit status |
+| Coop staff | Photo (taken on the hub itself) | Vision model → `agent_photo_result` / `agent_photo_unsure` / `agent_photo_quality`; save to `diagnoses.csv`; if sure → compute limit → `officer_request` to coop staff (or `officer_no_history`) |
+| Coop staff | `OK 4821` / `NO 4821` | Approve/decline → `noor_credit_ready` → sync |
 | Farmer or a registered household number (daughter's phone) | `LEAF F0001 leaf_rust 87` (sent by the weekend web page) | Treat like a hub photo result: save to `diagnoses.csv` with source `household_phone`; if confidence ≥ threshold → compute limit → `officer_request`, and `noor_confirmed` to Noor; else `extension_referral` |
 | Unknown number | anything | Ignore or `not_registered` |
 
-Photos: simplest is the agent taking them in the hub's camera app into a watched folder (e.g. `DCIM/FarmFlow/F0001_*.jpg`); the loop picks up new files and reads the farmer ID from the file name.
+Photos: simplest is coop staff taking them in the hub's camera app into a watched folder (e.g. `DCIM/FarmFlow/F0001_*.jpg`); the loop picks up new files and reads the farmer ID from the file name.
 
 ## 6. Vision (Martin owns; highest risk)
 
@@ -121,6 +123,8 @@ Photos: simplest is the agent taking them in the hub's camera app into a watched
 Order object: `{"order_id", "farmer_id", "items": [{"input_id", "qty"}], "total_rwf", "status": "requested", "created_at"}`.
 
 ## 8. Writing the Kinyarwanda examples (Mimi)
+
+Full guide, vocabulary prompts and the message for the test writer: `language/WRITING_GUIDE.md`.
 
 `language/examples.csv`: columns `text, label, lang, author, split`.
 

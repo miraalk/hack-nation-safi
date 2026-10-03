@@ -3,7 +3,7 @@
 Picks catalogue items whose `diagnoses` include the diagnosis, most important
 first (rank), quantity scaled by tree count (`per_trees`), staying within the
 credit limit, at most MAX_ITEMS items so it fits one USSD screen.
-No second model: the catalogue is agreed with the extension officer.
+No second model: the catalogue is agreed with the coop and the district extension service.
 """
 
 import math

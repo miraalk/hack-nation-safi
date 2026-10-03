@@ -2,7 +2,7 @@
 
 limit = clamp(ALPHA x P10_kg x first-payment price - outstanding, 0, CAP),
 rounded down to ROUND_TO_RWF. No AI here: the model forecasts, this rule decides
-the number, and a coop officer approves it before Noor can use it.
+the number, and coop staff approve it before Noor can use it.
 """
 
 from datetime import datetime, timezone
@@ -38,14 +38,14 @@ def compute_limit(farmer, coop, season_totals, diagnoses, rain_anomaly_last, las
             "forecast_p90_kg": fc["p90_kg"], "price_rwf_per_kg": last_price, "limit_rwf": limit}
 
 
-def approve(limit_obj, officer):
-    """Coop officer approval (e.g. from an 'OK <code>' SMS). Only approved limits sync to USSD."""
-    return {**limit_obj, "status": "approved", "approved_by": officer}
+def approve(limit_obj, approver):
+    """Coop staff approval (e.g. from an 'OK <code>' SMS). Only approved limits sync to USSD."""
+    return {**limit_obj, "status": "approved", "approved_by": approver}
 
 
 def explain(lim):
-    """One-line breakdown for the hub log and the officer's approval SMS."""
+    """One-line breakdown for the hub log and the coop staff approval SMS."""
     if lim["status"] == "insufficient_history":
-        return f"Only {lim['seasons_of_history']} season(s) of deliveries: no forecast, refer to coop officer"
+        return f"Only {lim['seasons_of_history']} season(s) of deliveries: no forecast, refer to coop staff"
     return (f"{config.ALPHA} x {lim['forecast_p10_kg']:,} kg (low-end forecast) x "
             f"RWF {lim['price_rwf_per_kg']}/kg - {lim['outstanding_rwf']:,} owed")

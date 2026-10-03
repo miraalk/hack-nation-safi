@@ -40,7 +40,7 @@ def main():
     assert 0 <= noor["limit_rwf"] <= config.CAP_RWF and noor["limit_rwf"] % config.ROUND_TO_RWF == 0
     assert noor["forecast_p10_kg"] <= noor["forecast_p50_kg"] <= noor["forecast_p90_kg"]
     assert jc["status"] == "insufficient_history" and jc["limit_rwf"] == 0, "new member must be referred"
-    assert approve(noor, "officer-01")["status"] == "approved"
+    assert approve(noor, "staff-01")["status"] == "approved"
 
     # outstanding advances reduce the limit
     f, coop = farmers["F0001"], coops[farmers["F0001"]["coop_id"]]
