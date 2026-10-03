@@ -1,10 +1,10 @@
-input_id,short_en,short_rw,name_en,category,unit,price_rwf,per_trees,rank,diagnoses,note_en
-I01,Fungicide 1kg,,Copper-based fungicide,treatment,1 kg,12000,500,1,leaf_rust|brown_eye_spot|berry_disease,Spray as shown by the extension officer. Wear gloves.
-I02,Sprayer hire,,Knapsack sprayer hire for the season,equipment,season,5000,0,2,leaf_rust|brown_eye_spot|berry_disease|pests|leaf_miner,Return to the washing station after use.
-I03,Insecticide 1L,,Approved insecticide for antestia and leaf miner,treatment,1 L,14000,750,1,pests|leaf_miner,Only use the product the coop stocks. Wear gloves.
-I04,NPK 50kg,,NPK fertilizer,fertilizer,50 kg bag,38000,500,1,nutrient|old_trees,Apply at the start of the rains.
-I05,Lime 50kg,,Agricultural lime,soil,50 kg bag,8000,1000,2,nutrient,For acidic soils. Ask for a soil test if unsure.
-I06,Mulch 10 bundles,,Mulch (grass or banana leaves),soil,10 bundles,6000,500,1,drought|nutrient,Keep mulch away from the stem.
-I07,Pruning saw,,Pruning saw and secateurs,equipment,set,15000,0,1,old_trees|berry_disease,Prune after harvest.
-I08,Seedlings x50,,Coffee seedlings to replace old trees,planting,50 seedlings,10000,0,2,old_trees,Plant at the start of the rains.
-I09,Drying tarp,,Drying tarpaulin for quality,post_harvest,1 tarp,9000,0,3,berry_disease,Keeps cherry off the ground.
+input_id,short_en,short_rw,name_en,category,unit,price_rwf,per_trees,rank,diagnoses,note_en,price_source
+I01,Fungicide 1kg,Umuti w'ibihumyo 1kg,Copper-based fungicide,treatment,1 kg,12000,500,1,leaf_rust|brown_eye_spot|berry_disease,Spray as shown by the extension officer. Wear gloves.,illustrative - check with coop
+I02,Sprayer hire,Gukodesha pompe,Knapsack sprayer hire for the season,equipment,season,5000,0,2,leaf_rust|brown_eye_spot|berry_disease|pests|leaf_miner,Return to the washing station after use.,illustrative - check with coop
+I03,Insecticide 1L,Umuti w'udukoko 1L,Approved insecticide for antestia and leaf miner,treatment,1 L,14000,750,1,pests|leaf_miner,Only use the product the coop stocks. Wear gloves.,illustrative - check with coop
+I04,NPK 50kg,NPK 50kg,NPK 17:17:17 fertilizer (subsidised),fertilizer,50 kg bag,93000,500,1,nutrient|old_trees,Apply at the start of the rains.,"RWF 1,861/kg farmer price after subsidy, season 2027A (New Times, July 2026)"
+I05,Lime 50kg,Ishwagara 50kg,Agricultural lime,soil,50 kg bag,8000,1000,2,nutrient,For acidic soils. Ask for a soil test if unsure.,illustrative - check with coop
+I06,Mulch 10 bundles,Gusasira (imiba 10),Mulch (grass or banana leaves),soil,10 bundles,6000,500,1,drought|nutrient,Keep mulch away from the stem.,illustrative - check with coop
+I07,Pruning saw,Urukero n'umukasi,Pruning saw and secateurs,equipment,set,15000,0,1,old_trees|berry_disease,Prune after harvest.,illustrative - check with coop
+I08,Seedlings x50,Ingemwe 50,Coffee seedlings to replace old trees,planting,50 seedlings,10000,0,2,old_trees,Plant at the start of the rains.,illustrative - check with coop
+I09,Drying tarp,Shitingi yo kwanika,Drying tarpaulin for quality,post_harvest,1 tarp,9000,0,3,berry_disease,Keeps cherry off the ground.,illustrative - check with coop
