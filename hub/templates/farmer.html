@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ f.farmer_id }} · {{ f.name }}{% endblock %}
+{% block content %}
+
+<a class="back" href="{{ url_for('index') }}">← All farmers</a>
+
+<section class="hero">
+  <h1>{{ f.name }}</h1>
+  <p class="sub">
+    {{ f.farmer_id }} · {{ f.coop_name }} ({{ f.district }}) · {{ f.village }} ·
+    {{ f.trees | rwf }} trees · member since {{ f.member_since }}
+    <span class="pill {{ f.status }}">{{ f.status_label }}</span>
+  </p>
+</section>
+
+<div class="detail">
+  <section class="panel">
+    <h3>Cherry delivered by season (kg)</h3>
+    {% if f.seasons %}
+    {% set maxkg = f.seasons.values() | max %}
+    <div class="bars">
+      {% for s, kg in f.seasons.items() %}
+      <div class="bar-row">
+        <span class="bar-label">{{ s }}</span>
+        <span class="bar-track"><span class="bar-fill" style="width: {{ (100 * kg / maxkg) | round(1) }}%"></span></span>
+        <span class="bar-val">{{ kg | kg }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">No deliveries recorded yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h3>Harvest forecast — season {{ f.limit.season }}</h3>
+    {% if f.limit.forecast_p50_kg is not none %}
+    <table class="kv">
+      <tr><td>Low (P10)</td><td class="num">{{ f.limit.forecast_p10_kg | kg }} kg</td></tr>
+      <tr><td>Expected (P50)</td><td class="num"><b>{{ f.limit.forecast_p50_kg | kg }} kg</b></td></tr>
+      <tr><td>High (P90)</td><td class="num">{{ f.limit.forecast_p90_kg | kg }} kg</td></tr>
+      <tr><td>Seasons of history</td><td class="num">{{ f.limit.seasons_of_history }}</td></tr>
+    </table>
+    {% else %}
+    <p class="muted">{{ f.limit.seasons_of_history }} season(s) of history — too thin to forecast.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h3>Proposed input credit</h3>
+    <div class="limit">{{ f.limit.limit_rwf | rwf }} <span>RWF</span></div>
+    <p class="muted">{{ f.explain }}</p>
+    <table class="kv">
+      <tr><td>Status</td><td><span class="pill {{ f.status }}">{{ f.status_label }}</span></td></tr>
+      <tr><td>First-payment price</td><td class="num">{{ f.limit.price_rwf_per_kg | rwf }} RWF/kg</td></tr>
+      <tr><td>Outstanding</td><td class="num">{{ f.limit.outstanding_rwf | rwf }} RWF</td></tr>
+      <tr><td>Approved by</td><td>{{ f.limit.approved_by or '—' }}</td></tr>
+      <tr><td>Computed at</td><td>{{ f.limit.computed_at }}</td></tr>
+      <tr><td>Model</td><td>{{ f.limit.model_version }}</td></tr>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h3>Diagnoses</h3>
+    {% if f.diagnoses %}
+    <table class="kv">
+      {% for dt, dx in f.diagnoses | reverse %}
+      <tr><td>{{ dt }}</td><td>{{ dx }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="muted">No confirmed diagnoses.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}FarmFlow hub — all farmers{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1>Cooperative overview</h1>
+  <p class="sub">Season {{ season }} harvest · {{ overall.farmers | rwf }} farmers across {{ overall.coops }} cooperatives</p>
+  <div class="cards">
+    <div class="card"><div class="n">{{ overall.farmers | rwf }}</div><div class="l">Farmers</div></div>
+    <div class="card"><div class="n">{{ overall.trees | rwf }}</div><div class="l">Coffee trees</div></div>
+    <div class="card"><div class="n">{{ overall.latest_kg | kg }}</div><div class="l">Cherry delivered, {{ season }} (kg)</div></div>
+    <div class="card"><div class="n">{{ overall.total_kg | kg }}</div><div class="l">Cherry all-time (kg)</div></div>
+    <div class="card accent"><div class="n">{{ overall.pending_rwf | rwf }}</div><div class="l">Credit pending approval (RWF)</div></div>
+  </div>
+</section>
+
+<section class="coops">
+  {% for c in coops %}
+  <div class="coop">
+    <h3>{{ c.name }}</h3>
+    <div class="coop-meta">{{ c.district }} district · {{ c.farmers }} farmers · {{ c.price | rwf }} RWF/kg ({{ season }})</div>
+    <div class="coop-stats">
+      <span><b>{{ c.latest_kg | kg }}</b> kg this season</span>
+      <span><b>{{ c.trees | rwf }}</b> trees</span>
+      <span><b>{{ c.pending_rwf | rwf }}</b> RWF pending</span>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="table-wrap">
+  <div class="controls">
+    <input id="search" type="search" placeholder="Search farmer, id or village…" autocomplete="off">
+    <label class="chk"><input type="checkbox" id="demoOnly"> Demo farmers only</label>
+    <span class="count" id="count"></span>
+  </div>
+  <table id="farmers">
+    <thead>
+      <tr>
+        <th data-sort="str">Farmer</th>
+        <th data-sort="str">Coop</th>
+        <th data-sort="str">Village</th>
+        <th data-sort="num">Trees</th>
+        <th data-sort="num">{{ season }} kg</th>
+        <th data-sort="num">All-time kg</th>
+        <th data-sort="num">Seasons</th>
+        <th data-sort="num">Forecast P50</th>
+        <th data-sort="num">Credit (RWF)</th>
+        <th data-sort="str">Status</th>
+        <th data-sort="str">Latest issue</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr data-demo="{{ r.is_demo }}" data-search="{{ (r.farmer_id ~ ' ' ~ r.name ~ ' ' ~ r.village) | lower }}">
+        <td><a href="{{ url_for('farmer', farmer_id=r.farmer_id) }}">{{ r.farmer_id }} · {{ r.name }}</a></td>
+        <td>{{ r.coop_name }}</td>
+        <td>{{ r.village }}</td>
+        <td data-v="{{ r.trees }}" class="num">{{ r.trees | rwf }}</td>
+        <td data-v="{{ r.latest_kg }}" class="num">{{ r.latest_kg | kg }}</td>
+        <td data-v="{{ r.total_kg }}" class="num">{{ r.total_kg | kg }}</td>
+        <td data-v="{{ r.n_seasons }}" class="num">{{ r.n_seasons }}</td>
+        <td data-v="{{ r.forecast_p50 or 0 }}" class="num">{{ r.forecast_p50 | kg }}</td>
+        <td data-v="{{ r.limit.limit_rwf }}" class="num">{{ r.limit.limit_rwf | rwf }}</td>
+        <td data-v="{{ r.status }}"><span class="pill {{ r.status }}">{{ r.status_label }}</span></td>
+        <td>{{ r.latest_diag or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const table = document.getElementById('farmers');
+const tbody = table.tBodies[0];
+const rows = Array.from(tbody.rows);
+const search = document.getElementById('search');
+const demoOnly = document.getElementById('demoOnly');
+const count = document.getElementById('count');
+
+function apply() {
+  const q = search.value.trim().toLowerCase();
+  const demo = demoOnly.checked;
+  let shown = 0;
+  for (const r of rows) {
+    const ok = (!demo || r.dataset.demo === '1') &&
+               (!q || r.dataset.search.includes(q));
+    r.style.display = ok ? '' : 'none';
+    if (ok) shown++;
+  }
+  count.textContent = shown + ' shown';
+}
+search.addEventListener('input', apply);
+demoOnly.addEventListener('change', apply);
+
+table.tHead.addEventListener('click', e => {
+  const th = e.target.closest('th');
+  if (!th) return;
+  const i = Array.from(th.parentNode.children).indexOf(th);
+  const num = th.dataset.sort === 'num';
+  const asc = !(th.dataset.dir === 'asc');
+  th.parentNode.querySelectorAll('th').forEach(h => h.removeAttribute('data-dir'));
+  th.dataset.dir = asc ? 'asc' : 'desc';
+  const val = r => {
+    const cell = r.cells[i];
+    return num ? Number(cell.dataset.v || 0) : (cell.textContent || '').trim().toLowerCase();
+  };
+  rows.sort((a, b) => {
+    const x = val(a), y = val(b);
+    return (x < y ? -1 : x > y ? 1 : 0) * (asc ? 1 : -1);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+});
+
+apply();
+</script>
+{% endblock %}

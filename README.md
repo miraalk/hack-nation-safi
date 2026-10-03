@@ -46,4 +46,19 @@ python3 backend/check_ussd.py        # wording checks
 
 Vision: see `vision/train_vision.py` (needs torch, torchvision, onnx, onnxruntime).
 
+## Hub dashboard
+
+A read-only web view of every farmer and what they deliver, for coop staff at the
+washing station. Runs offline on the hub phone (Termux) or any laptop, and reuses
+`shared/` so its numbers match the SMS loop and the tests.
+
+```
+pip install flask
+python3 hub/app.py        # open http://127.0.0.1:5000
+```
+
+It shows cooperative totals, a per-coop breakdown, a sortable/searchable table of
+all farmers (deliveries by season, harvest forecast, proposed credit, latest
+diagnosis), and a per-farmer detail page.
+
 Start with `HANDOFF.md` for the full build notes.

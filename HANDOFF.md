@@ -43,6 +43,7 @@ python3 backend/check_ussd.py                 # wording files: length, placehold
 | Text model | `shared/text_model.py`, `language/train_text.py` | Pipeline done; needs Mimi's Kinyarwanda examples |
 | Vision model | `vision/train_vision.py`, `vision/predict.py` | **Written, never run** (no PyTorch or dataset in Claude's sandbox) |
 | Wording | `backend/ussd_script.json`, `hub/sms_script.json` | English done; Kinyarwanda drafted by Claude, **Mimi checking** |
+| Hub dashboard (read-only) | `hub/app.py`, `hub/dashboard.py`, `hub/templates/`, `hub/static/` | Done. Flask; `pip install flask && python hub/app.py`. Aggregate of every farmer + per-farmer detail, reuses `shared/` |
 | Hub SMS loop, Lambda, sync | `hub/`, `backend/` | **Martin** |
 
 Everything in `shared/` is standard-library Python: it runs on Termux, in Lambda, or as the reference for a Kotlin port.
@@ -142,7 +143,7 @@ Full guide, vocabulary prompts and the message for the test writer: `language/WR
 /model     forecast training + exported model + report
 /language  Kinyarwanda examples + text training + exported model
 /vision    leaf model training + hub prediction
-/hub       SMS loop (Martin), sms_script.json
+/hub       read-only dashboard (app.py, dashboard.py, templates, static), SMS loop (Martin), sms_script.json
 /backend   Lambda (Martin), ussd_script.json, check_ussd.py
 /tests     checks on the demo farmers
 /docs      write-up, video script
