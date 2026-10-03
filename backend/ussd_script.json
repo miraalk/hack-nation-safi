@@ -1,0 +1,87 @@
+{
+  "_readme": [
+    "Every USSD screen Noor sees. The Lambda reads this file; edit wording here, not in code.",
+    "Fill in every 'rw'. Keep the {placeholders} exactly as written; you can move them around.",
+    "\\n is a new line. Keep options in the same order: the code maps option numbers to the 'options' keys.",
+    "'CON' or 'END' is added by the code: CON waits for a reply, END closes the session.",
+    "Check with: python3 backend/check_ussd.py   (aim for 160 characters or fewer per screen)"
+  ],
+  "screens": {
+    "language": {
+      "type": "CON",
+      "en": "FarmFlow\n1. Ikinyarwanda\n2. English",
+      "rw": "FarmFlow\n1. Ikinyarwanda\n2. English"
+    },
+    "main_menu": {
+      "type": "CON",
+      "en": "FarmFlow - Hi {name}\n1. My input credit\n2. Get inputs",
+      "rw": ""
+    },
+    "credit": {
+      "type": "CON",
+      "en": "Input credit: RWF {limit}\nApproved by your coop.\nRepaid from your {season} cherry payments.\nUpdated {as_of}\n1. Get inputs\n0. Back",
+      "rw": ""
+    },
+    "pending": {
+      "type": "END",
+      "en": "Your coop officer is reviewing your input credit. We will SMS you when it is ready.",
+      "rw": ""
+    },
+    "no_history": {
+      "type": "END",
+      "en": "Input credit needs 2 seasons of cherry deliveries to the coop. Please talk to your coop officer.",
+      "rw": ""
+    },
+    "diagnosis_known": {
+      "type": "CON",
+      "en": "Last check: {diagnosis}\nSuggested: {bundle}\nRWF {total} of {limit}\n1. Order\n2. Other problem\n0. Cancel",
+      "rw": ""
+    },
+    "problem": {
+      "type": "CON",
+      "options": ["needs_photo", "needs_photo", "nutrient", "drought", "old_trees", "unknown"],
+      "en": "What is the problem?\n1. Spots on leaves\n2. Insects or damaged berries\n3. Pale yellow leaves\n4. Dry, wilting trees\n5. Old trees, low harvest\n6. Not sure",
+      "rw": ""
+    },
+    "needs_photo": {
+      "type": "END",
+      "en": "Please bring 5 affected leaves or berries to {centre} so we can check them before you buy treatment.",
+      "rw": ""
+    },
+    "recommend": {
+      "type": "CON",
+      "en": "Suggested: {bundle}\nRWF {total} of {limit}\n1. Order\n2. Start again\n0. Cancel",
+      "rw": ""
+    },
+    "order_done": {
+      "type": "END",
+      "en": "Order sent. Collect at {centre}. RWF {total} will come off your next cherry payments.",
+      "rw": ""
+    },
+    "refer": {
+      "type": "END",
+      "en": "We are not sure what this is. Your extension officer will contact you.",
+      "rw": ""
+    },
+    "cancelled": {
+      "type": "END",
+      "en": "No order placed. Dial again anytime.",
+      "rw": ""
+    },
+    "too_low": {
+      "type": "END",
+      "en": "Your credit (RWF {limit}) is below the cheapest treatment (RWF {cheapest}). Talk to your coop officer.",
+      "rw": ""
+    },
+    "not_registered": {
+      "type": "END",
+      "en": "This number is not registered with FarmFlow. Please visit your washing station.",
+      "rw": ""
+    },
+    "invalid": {
+      "type": "PREFIX",
+      "en": "Invalid choice.\n",
+      "rw": ""
+    }
+  }
+}

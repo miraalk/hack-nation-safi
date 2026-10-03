@@ -1,0 +1,11 @@
+{
+  "test_examples": 1197,
+  "mae_p50_kg": 147.4,
+  "mae_baseline_kg": 180.6,
+  "improvement_vs_baseline": "18%",
+  "p10_p90_coverage": 0.763,
+  "share_above_p10": 0.88,
+  "model_file_kb": 163.8,
+  "pure_python_ms_per_farmer": 0.3,
+  "parity_max_abs_diff_kg": 0.5
+}

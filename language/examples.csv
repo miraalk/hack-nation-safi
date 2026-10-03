@@ -1,0 +1,47 @@
+text,label,lang,author,split
+my coffee leaves have yellow spots,yellow_orange_spots,en,seed,train
+orange powder under the coffee leaves,yellow_orange_spots,en,seed,train
+leaves have orange rust colour and are falling,yellow_orange_spots,en,seed,train
+yellow patches on leaves then they fall off,yellow_orange_spots,en,seed,train
+the leaves look rusty orange underneath,yellow_orange_spots,en,seed,train
+spots like rust on my coffee,yellow_orange_spots,en,seed,train
+brown spots with a light centre on the leaves,brown_spots,en,seed,train
+leaves have round brown marks,brown_spots,en,seed,train
+brown dots on leaves and berries,brown_spots,en,seed,train
+dark brown patches on coffee leaves,brown_spots,en,seed,train
+the leaves have brown eye spots,brown_spots,en,seed,train
+something is eating inside the leaves making lines,leaf_tunnels,en,seed,train
+leaves have brown dry patches like tunnels,leaf_tunnels,en,seed,train
+small worms inside the leaf,leaf_tunnels,en,seed,train
+the leaf skin peels and has tracks,leaf_tunnels,en,seed,train
+white lines and blisters on leaves,leaf_tunnels,en,seed,train
+the berries turn black and fall,berries_black_drop,en,seed,train
+green cherries are dropping before ripe,berries_black_drop,en,seed,train
+black sunken spots on the berries,berries_black_drop,en,seed,train
+my coffee cherries are rotting,berries_black_drop,en,seed,train
+holes in the berries and they drop,berries_black_drop,en,seed,train
+there are bugs on my coffee,insects,en,seed,train
+green shield bugs on the branches,insects,en,seed,train
+insects sucking the berries,insects,en,seed,train
+many small insects on the coffee trees,insects,en,seed,train
+beetles on the coffee plants,insects,en,seed,train
+the leaves are pale and yellow all over,leaves_pale,en,seed,train
+the whole tree is light green not dark,leaves_pale,en,seed,train
+old leaves turning yellow from the edges,leaves_pale,en,seed,train
+my coffee looks weak and pale,leaves_pale,en,seed,train
+yellowing leaves no spots,leaves_pale,en,seed,train
+the leaves are dry and curling,wilting_dry,en,seed,train
+the trees are wilting because no rain,wilting_dry,en,seed,train
+leaves hanging down in the sun,wilting_dry,en,seed,train
+the soil is very dry and plants are dying,wilting_dry,en,seed,train
+drought is killing my coffee,wilting_dry,en,seed,train
+my trees are very old and give little coffee,old_low_yield,en,seed,train
+the coffee gives less every year,old_low_yield,en,seed,train
+trees are tall and old with few berries,old_low_yield,en,seed,train
+harvest is lower but the trees look fine,old_low_yield,en,seed,train
+my yields dropped and I do not know why,old_low_yield,en,seed,train
+when is the next payment,other,en,seed,train
+hello,other,en,seed,train
+how much is the price this year,other,en,seed,train
+my cow is sick,other,en,seed,train
+thank you,other,en,seed,train

@@ -1,0 +1,92 @@
+{
+  "_readme": [
+    "Every SMS the hub sends. The hub reads this file; edit wording here, not in code.",
+    "Messages to Noor need 'rw' (and 'en'). Messages to staff (agent, officers) can stay English, but fill 'rw' if they prefer it.",
+    "Keep {placeholders} exactly as written. One SMS is 160 characters; longer ones split into 2 and cost double.",
+    "Check with: python3 backend/check_ussd.py"
+  ],
+  "diagnosis_names": {
+    "leaf_rust":      {"en": "leaf rust",          "rw": ""},
+    "brown_eye_spot": {"en": "brown eye spot",     "rw": ""},
+    "leaf_miner":     {"en": "leaf miner",         "rw": ""},
+    "berry_disease":  {"en": "berry disease",      "rw": ""},
+    "pests":          {"en": "insect pests",       "rw": ""},
+    "nutrient":       {"en": "nutrient shortage",  "rw": ""},
+    "drought":        {"en": "drought stress",     "rw": ""},
+    "old_trees":      {"en": "old trees",          "rw": ""},
+    "healthy":        {"en": "no disease seen",    "rw": ""},
+    "unknown":        {"en": "not sure",           "rw": ""}
+  },
+  "messages": {
+    "noor_likely_bring_leaves": {
+      "to": "farmer",
+      "en": "FarmFlow: this sounds like {diagnosis}. Please bring 5 affected leaves to {centre} so we can check.",
+      "rw": ""
+    },
+    "noor_likely_no_photo": {
+      "to": "farmer",
+      "en": "FarmFlow: this sounds like {diagnosis}. Dial {ussd} to see inputs you can get on credit.",
+      "rw": ""
+    },
+    "noor_unsure": {
+      "to": "farmer",
+      "en": "FarmFlow: we are not sure what this is. Your extension officer will contact you. You can also bring leaves to {centre}.",
+      "rw": ""
+    },
+    "noor_confirmed": {
+      "to": "farmer",
+      "en": "FarmFlow: the washing station confirmed {diagnosis}. Your coop is reviewing input credit for you.",
+      "rw": ""
+    },
+    "noor_credit_ready": {
+      "to": "farmer",
+      "en": "FarmFlow: your input credit of RWF {limit} is ready. Dial {ussd} to order.",
+      "rw": ""
+    },
+    "agent_photo_result": {
+      "to": "agent",
+      "en": "Leaf: {diagnosis} ({conf}% sure). Suggested: {bundle}. Credit proposal sent to coop officer.",
+      "rw": ""
+    },
+    "agent_photo_unsure": {
+      "to": "agent",
+      "en": "Not sure ({conf}%). Sent to the extension officer. Do not sell treatment yet.",
+      "rw": ""
+    },
+    "agent_photo_quality": {
+      "to": "agent",
+      "en": "Photo {problem}. Please take it again in daylight, leaf filling the frame.",
+      "rw": ""
+    },
+    "agent_logged": {
+      "to": "agent",
+      "en": "Logged: {name} {kg}kg cherry. Season total {total_kg}kg.",
+      "rw": ""
+    },
+    "agent_help": {
+      "to": "agent",
+      "en": "D <id> <kg> [R<rejected kg>] log cherry / L <id> credit status / HELP",
+      "rw": ""
+    },
+    "agent_error": {
+      "to": "agent",
+      "en": "Not understood. Try: D F0001 25.5 or L F0001",
+      "rw": ""
+    },
+    "officer_request": {
+      "to": "officer",
+      "en": "FarmFlow: {name} {farmer_id}, {diagnosis}. Proposed credit RWF {limit} (low forecast {p10} kg). Reply OK {code} or NO {code}",
+      "rw": ""
+    },
+    "officer_no_history": {
+      "to": "officer",
+      "en": "FarmFlow: {name} {farmer_id} asked for input credit but has under 2 seasons of deliveries. Please follow up.",
+      "rw": ""
+    },
+    "extension_referral": {
+      "to": "extension",
+      "en": "FarmFlow referral: {name} ({village}, {phone}) wrote: {message}. Model not sure. Please follow up.",
+      "rw": ""
+    }
+  }
+}

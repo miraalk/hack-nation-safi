@@ -1,51 +1,52 @@
 """
-FarmFlow synthetic dairy cooperative data generator.
+FarmFlow synthetic coffee cooperative data generator.
 
-Simulates daily milk deliveries from smallholder dairy farmers to Rwandan
-cooperatives. Every number here is an ILLUSTRATIVE ASSUMPTION for a hackathon
-prototype, not a Rwandan statistic. State this in the README and submission.
+Simulates smallholder coffee farmers delivering cherry to cooperative washing
+stations in the Rwandan highlands, harvest seasons 2021-2026. Every number is an
+ILLUSTRATIVE ASSUMPTION for a hackathon prototype, not a Rwandan statistic.
+Say so in the README and the submission.
 
-Mechanics simulated (each gives the model something to learn beyond an average):
-  - herd size 1-5 cows, most farmers 1-2
-  - per-cow lactation curve (Wood's curve), staggered calving, dry periods
-  - seasonality: lower yield in dry seasons (Jun-Aug long dry, Dec-Feb short dry)
-  - sickness shocks that cut a cow's yield for 1-3 weeks
-  - home consumption kept back before delivery
-  - missed delivery days, more common for small farmers
-  - quality rejections, varying by farmer
-  - monthly pay cycle per coop, payout 5-20 days after cutoff
+Mechanics (each gives the forecast model something to learn beyond "same as last year"):
+  - tree count per farmer (lognormal), average tree age with a yield-by-age curve
+  - management quality (cherry kg per tree)
+  - biennial bearing: alternating high/low years, strength varies by farmer
+  - pre-season rainfall anomaly per district (synthetic; swap for CHIRPS)
+  - coffee leaf rust: wetter years and weaker management raise the risk; rust in
+    one season cuts the NEXT season's yield (defoliation)
+  - only some rust cases are reported to the washing station (diagnoses.csv)
+  - side-selling: each farmer delivers only a share of the harvest to the coop
+  - daily deliveries over the March-July harvest, peaking around April-May
+  - first payment per kg at delivery, second payment after the coffee is sold
 
-Usage:  python generate_data.py            (writes CSVs next to this file)
+Usage:  python generate_data.py                 (writes CSVs next to this file)
         python generate_data.py --farmers 500 --seed 7
 """
 
 import argparse
-import calendar
 from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# ---------------------------------------------------------------- config
-START = date(2025, 9, 16)          # first day of simulated data (start of a cycle)
-TODAY = date(2026, 10, 3)          # demo "today"; data runs up to and including this
+SEASONS = [2021, 2022, 2023, 2024, 2025, 2026]   # harvest year
+HARVEST_START = (3, 1)                            # 1 March
+HARVEST_END = (7, 15)                             # 15 July
+TODAY = date(2026, 10, 3)
 N_FARMERS = 2000
 N_DEMO = 60
 
 COOPS = [
-    # id, name, village, cutoff day, avg days to pay, base price RWF/L
-    ("C01", "Twitezimbere Dairy Cooperative", "Nyagatare", 15, 9, 400),
-    ("C02", "Abahizi Milk Cooperative", "Gicumbi", 15, 14, 380),
-    ("C03", "Inyange Farmers Cooperative", "Nyabihu", 15, 6, 420),
+    # id, name, district, avg days to first payment, base cherry price RWF/kg
+    ("C01", "Ondera Coffee Cooperative", "Nyamasheke", 10, 430),
+    ("C02", "Abakundakawa Cooperative", "Gakenke", 14, 410),
+    ("C03", "Twongere Umusaruro Cooperative", "Huye", 7, 450),
 ]
-
 VILLAGES = {
-    "C01": ["Nyagatare", "Karangazi", "Rwimiyaga", "Matimba"],
-    "C02": ["Gicumbi", "Byumba", "Rukomo", "Mukarange"],
-    "C03": ["Nyabihu", "Mukamira", "Jenda", "Rambura"],
+    "C01": ["Ondera", "Kanjongo", "Macuba", "Rangiro"],
+    "C02": ["Rushashi", "Muzo", "Janja", "Coko"],
+    "C03": ["Maraba", "Simbi", "Rusatira", "Huye"],
 }
-
 FIRST_NAMES = [
     "Aline", "Jean Claude", "Marie", "Emmanuel", "Josiane", "Eric", "Claudine",
     "Patrick", "Vestine", "Innocent", "Diane", "Theogene", "Jeanne", "Olivier",
@@ -60,194 +61,148 @@ LAST_NAMES = [
     "Uwamahoro", "Kamanzi",
 ]
 
-# Lactation (Wood's curve y = a * t^b * exp(-c t)), peak at t = b/c days in milk
-WOOD_B, WOOD_C = 0.20, 0.004       # peak around day 50
-LACTATION_DAYS = 305
-CALVING_INTERVAL_MEAN, CALVING_INTERVAL_SD = 420, 45
 
-SICKNESS_HAZARD = 1 / 220          # per cow per day
-SEASON = {1: 0.88, 2: 0.86, 3: 1.00, 4: 1.06, 5: 1.06, 6: 0.92,
-          7: 0.84, 8: 0.82, 9: 0.95, 10: 1.02, 11: 1.05, 12: 0.92}
-NOISE_SD = 0.08                    # daily lognormal noise on yield
+def age_factor(age):
+    """Relative yield by average tree age (young trees ramp up, old trees decline)."""
+    age = np.asarray(age, dtype=float)
+    ramp = np.clip((age - 2) / 4, 0.1, 1.0)
+    decline = np.clip(1 - (age - 20) * 0.025, 0.4, 1.0)
+    return ramp * decline
 
 
-# ---------------------------------------------------------------- helpers
-def cycle_bounds(d: date, cutoff_day: int):
-    """Return (cycle_start, cycle_end) for the pay cycle containing date d."""
-    if d.day <= cutoff_day:
-        end = d.replace(day=cutoff_day)
-    else:
-        y, m = (d.year + (d.month == 12), d.month % 12 + 1)
-        end = date(y, m, min(cutoff_day, calendar.monthrange(y, m)[1]))
-    py, pm = (end.year - (end.month == 1), (end.month - 2) % 12 + 1)
-    prev_end = date(py, pm, min(cutoff_day, calendar.monthrange(py, pm)[1]))
-    return prev_end + timedelta(days=1), end
+def harvest_days(year):
+    s = date(year, *HARVEST_START)
+    e = date(year, *HARVEST_END)
+    return [s + timedelta(days=i) for i in range((e - s).days + 1)]
 
 
-def wood(dim, peak):
-    a = peak / ((WOOD_B / WOOD_C) ** WOOD_B * np.exp(-WOOD_B))
-    t = np.maximum(dim, 1)
-    return a * t ** WOOD_B * np.exp(-WOOD_C * t)
-
-
-def simulate_cow(rng, days, start_ord, peak, anchor_calving=None):
-    """Daily litres for one cow over `days` days, plus its events.
-
-    anchor_calving: optional ordinal date of one known calving (used to pin
-    demo farmers' cows in mid-lactation); other calvings are spaced from it.
-    """
-    n = len(days)
-    anchor = anchor_calving if anchor_calving is not None else \
-        start_ord - int(rng.integers(0, CALVING_INTERVAL_MEAN))
-    calvings = [anchor]
-    while calvings[0] > start_ord:
-        calvings.insert(0, calvings[0] - int(rng.normal(CALVING_INTERVAL_MEAN, CALVING_INTERVAL_SD)))
-    while calvings[-1] < start_ord + n:
-        calvings.append(calvings[-1] + int(rng.normal(CALVING_INTERVAL_MEAN, CALVING_INTERVAL_SD)))
-    calvings = np.array(calvings)
-    day_ords = start_ord + np.arange(n)
-    idx = np.searchsorted(calvings, day_ords, side="right") - 1
-    dim = day_ords - calvings[idx]
-    milk = np.where(dim <= LACTATION_DAYS, wood(dim, peak), 0.0)
-
-    # sickness shocks
-    events = []
-    sick = np.ones(n)
-    d = 0
-    while d < n:
-        if rng.random() < SICKNESS_HAZARD:
-            length = int(rng.integers(7, 22))
-            severity = rng.uniform(0.35, 0.7)
-            # gradual recovery: worst at start, back to normal at the end
-            ramp = severity + (1 - severity) * np.linspace(0, 1, length)
-            sick[d:d + length] = np.minimum(sick[d:d + length], ramp[: n - d])
-            events.append(("sickness", d, min(d + length, n) - 1))
-            d += length
-        else:
-            d += 1
-    for c in calvings:
-        if start_ord <= c < start_ord + n:
-            events.append(("calving", int(c - start_ord), None))
-    return milk * sick, events, sick
-
-
-# ---------------------------------------------------------------- main
 def main(n_farmers=N_FARMERS, seed=42, out_dir=None):
     rng = np.random.default_rng(seed)
     out = Path(out_dir) if out_dir else Path(__file__).parent
-    n_days = (TODAY - START).days + 1
-    days = [START + timedelta(days=i) for i in range(n_days)]
-    start_ord = START.toordinal()
-    months = np.array([d.month for d in days])
-    season = np.array([SEASON[m] for m in months])
+    coops = pd.DataFrame(COOPS, columns=["coop_id", "name", "district",
+                                         "avg_days_to_first_payment", "base_price"])
 
-    coops = pd.DataFrame(COOPS, columns=["coop_id", "name", "village", "cycle_cutoff_day",
-                                         "avg_days_to_pay", "base_price"])
-
-    # prices per coop per cycle (small drift), and payouts
-    price_lookup, payout_rows = {}, []
+    # ---- rainfall: pre-season (Sep-Feb before each harvest) anomaly per district
+    rain_rows, rain_anom = [], {}
     for c in coops.itertuples():
-        d, price = START, c.base_price
-        while d <= TODAY:
-            cs, ce = cycle_bounds(d, c.cycle_cutoff_day)
-            price = int(round(np.clip(price + rng.normal(0, 8), c.base_price - 40, c.base_price + 40)))
-            price_lookup[(c.coop_id, ce)] = price
-            pay_delay = int(np.clip(rng.normal(c.avg_days_to_pay, 3), 3, 25))
-            payout = ce + timedelta(days=pay_delay)
-            payout_rows.append({"coop_id": c.coop_id, "cycle_start": cs, "cycle_end": ce,
-                                "payout_date": payout if payout <= TODAY else None})
-            d = ce + timedelta(days=1)
+        for s in SEASONS + [SEASONS[-1] + 1]:
+            anom = float(np.clip(rng.normal(0, 0.15), -0.35, 0.35))
+            rain_anom[(c.district, s)] = anom
+            rain_rows.append({"district": c.district, "season": s,
+                              "preseason_rain_mm": round(950 * (1 + anom)),
+                              "anomaly": round(anom, 3)})
 
-    farmer_rows, delivery_frames, event_rows = [], [], []
-    herd_probs = [0.42, 0.30, 0.15, 0.08, 0.05]
+    # ---- prices and payouts per coop per season
+    price, payout_rows = {}, []
+    for c in coops.itertuples():
+        p = c.base_price
+        for s in SEASONS:
+            p = int(round(np.clip(p + rng.normal(0, 15), c.base_price - 60, c.base_price + 60)))
+            second = int(round(rng.uniform(40, 120)))
+            price[(c.coop_id, s)] = p
+            payout_rows.append({
+                "coop_id": c.coop_id, "season": s,
+                "first_payment_rwf_per_kg": p,
+                "avg_days_to_first_payment": c.avg_days_to_first_payment,
+                "second_payment_rwf_per_kg": second,
+                "second_payment_date": date(s, 11, 1) + timedelta(days=int(rng.integers(0, 45))),
+            })
+    payouts = pd.DataFrame(payout_rows)
+    payouts.loc[payouts.second_payment_date > TODAY, "second_payment_date"] = None
+
+    farmer_rows, delivery_frames, rust_rows, diag_rows, season_rows = [], [], [], [], []
 
     for i in range(n_farmers):
         fid = f"F{i + 1:04d}"
-        coop = coops.iloc[i % len(coops)] if i >= N_DEMO else coops.iloc[0 if i < 30 else (i % 3)]
-        herd = int(rng.choice([1, 2, 3, 4, 5], p=herd_probs))
+        coop = coops.iloc[0] if i < 30 else coops.iloc[i % len(coops)]
+        trees = int(np.clip(rng.lognormal(np.log(600), 0.6), 100, 4000))
+        age0 = float(rng.uniform(4, 35))                 # avg tree age in 2021
+        mgmt = float(np.clip(rng.normal(1.8, 0.5), 0.6, 3.2))   # kg cherry / tree at peak
+        bien = float(rng.uniform(0, 0.25)) * rng.choice([-1, 1])
+        loyalty = float(rng.beta(6, 2))                  # share of harvest sold to the coop
+        rust_base = float(np.clip(0.18 - 0.05 * (mgmt - 1.8), 0.03, 0.35))
+        first_season = SEASONS[0]
         name = f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}"
-        if i == 0:
-            name, herd, coop = "Aline Mukamana", 2, coops.iloc[0]
-        if i == 1:
-            name, herd, coop = "Jean Claude Habimana", 2, coops.iloc[0]
 
-        # farmer-level traits
-        peak_mean = rng.uniform(7, 13)                 # breed/feeding quality
-        home_use = rng.uniform(0.5, 2.0)               # litres kept at home daily
-        miss_p = np.clip(0.10 - 0.015 * herd + rng.normal(0, 0.02), 0.01, 0.15)
-        reject_p = rng.beta(1.2, 30)                   # chance a day has a rejection
-        full_reject_p = reject_p * 0.15
-
-        # demo farmers: cows pinned in mid-lactation so the story is clear
-        pinned = {0: [date(2026, 7, 10), date(2026, 6, 5)],
-                  1: [date(2026, 7, 20), date(2026, 5, 25)]}.get(i)
-        if pinned:
-            peak_mean = 12.0
-
-        total = np.zeros(n_days)
-        for cow in range(herd):
-            peak = max(3.0, rng.normal(peak_mean, 1.5))
-            anchor = pinned[cow].toordinal() if pinned else None
-            milk, events, sick = simulate_cow(rng, days, start_ord, peak, anchor)
-            if pinned:
-                # no random sickness in the current cycle for demo farmers
-                cs = (date(2026, 9, 16) - START).days
-                events = [e for e in events if not (e[0] == "sickness" and e[2] >= cs)]
-                milk[cs:] = milk[cs:] / sick[cs:]
-            if i == 1 and cow == 0:
-                # demo story: Jean Claude's cow falls sick on 2026-09-27
-                s = (date(2026, 9, 27) - START).days
-                length, severity = 18, 0.35
-                ramp = severity + (1 - severity) * np.linspace(0, 1, length)
-                milk[s:s + length] *= ramp[: n_days - s]
-                events.append(("sickness", s, min(s + length, n_days) - 1))
-            total += milk
-            for ev, s, e in events:
-                event_rows.append({"farmer_id": fid, "cow": cow + 1, "event": ev,
-                                   "start": days[s], "end": days[e] if e is not None else None})
-
-        noise = rng.lognormal(0, NOISE_SD, n_days)
-        delivered = np.maximum(0, total * season * noise - home_use)
-        delivered = np.round(delivered, 1)
-        missed = rng.random(n_days) < miss_p
-        delivered[missed] = 0.0
-
-        rejected = np.zeros(n_days)
-        partial = rng.random(n_days) < reject_p
-        rejected[partial] = np.round(delivered[partial] * rng.uniform(0.1, 0.5, partial.sum()), 1)
-        full = rng.random(n_days) < full_reject_p
-        rejected[full] = delivered[full]
-
-        mask = delivered > 0
-        prices = [price_lookup[(coop.coop_id, cycle_bounds(d, coop.cycle_cutoff_day)[1])] for d in days]
-        delivery_frames.append(pd.DataFrame({
-            "farmer_id": fid,
-            "date": np.array(days)[mask],
-            "litres_delivered": delivered[mask],
-            "litres_rejected": rejected[mask],
-            "price_per_litre": np.array(prices)[mask],
-        }))
+        # demo farmers
+        rust_force = {}
+        if i == 0:   # Noor: good history, rust in 2025 -> yields fell in 2026
+            name, trees, age0, mgmt, bien, loyalty = "Noor Mukamana", 1500, 9.0, 2.1, 0.08, 0.62
+            rust_force = {2021: 0.0, 2022: 0.0, 2023: 0.0, 2024: 0.0, 2025: 0.45, 2026: 0.30}
+        if i == 1:   # new member: one season only -> "talk to the coop officer"
+            name, first_season = "Jean Claude Habimana", 2026
 
         farmer_rows.append({
             "farmer_id": fid, "coop_id": coop.coop_id, "name": name,
             "phone": f"+250700{i + 1:06d}",      # placeholder, not a real number
-            "herd_size": herd,
+            "trees": trees, "avg_tree_age_2021": round(age0, 1),
             "village": rng.choice(VILLAGES[coop.coop_id]),
-            "is_demo": int(i < N_DEMO),
+            "member_since": first_season, "is_demo": int(i < N_DEMO),
         })
+
+        prev_rust = 0.0
+        for s in SEASONS:
+            anom = rain_anom[(coop.district, s)]
+            sev = rust_force.get(s)
+            if sev is None:
+                p_rust = np.clip(rust_base * (1 + 2.0 * anom), 0.01, 0.6)
+                sev = float(rng.uniform(0.15, 0.6)) if rng.random() < p_rust else 0.0
+            age = age0 + (s - SEASONS[0])
+            phase = 1 if (s % 2 == 0) else -1
+            kg = (trees * mgmt * age_factor(age) * (1 + bien * phase) * (1 + 0.6 * anom)
+                  * (1 - 0.55 * prev_rust) * (1 - 0.15 * sev)
+                  * rng.lognormal(0, 0.10))
+            share = float(np.clip(loyalty + rng.normal(0, 0.08), 0.1, 1.0))
+            delivered_total = kg * share if s >= first_season else 0.0
+            if sev > 0:
+                rust_rows.append({"farmer_id": fid, "season": s, "severity": round(sev, 2)})
+                if s >= first_season and (rng.random() < 0.5 or i == 0):
+                    d = date(s, 8, 1) + timedelta(days=int(rng.integers(0, 60)))
+                    diag_rows.append({"farmer_id": fid, "date": d, "diagnosis": "leaf_rust",
+                                      "source": "extension_officer"})
+            season_rows.append({"farmer_id": fid, "season": s, "harvest_kg": round(kg),
+                                "delivered_kg": round(delivered_total), "rust_severity": round(sev, 2)})
+            prev_rust = sev
+
+            if delivered_total <= 0:
+                continue
+            days = harvest_days(s)
+            n = len(days)
+            # harvest curve: bell shape peaking around late April / May
+            t = np.arange(n)
+            curve = np.exp(-0.5 * ((t - n * 0.45) / (n * 0.2)) ** 2)
+            visits = rng.random(n) < float(rng.uniform(0.25, 0.55))
+            w = curve * visits
+            if w.sum() == 0:
+                continue
+            kgs = np.round(delivered_total * w / w.sum() * rng.lognormal(0, 0.15, n), 1)
+            floaters = np.round(kgs * rng.uniform(0, 0.06, n), 1)   # rejected cherry
+            mask = kgs > 0
+            delivery_frames.append(pd.DataFrame({
+                "farmer_id": fid,
+                "date": np.array(days)[mask],
+                "cherry_kg": kgs[mask],
+                "rejected_kg": floaters[mask],
+                "price_rwf_per_kg": price[(coop.coop_id, s)],
+            }))
 
     farmers = pd.DataFrame(farmer_rows)
     deliveries = pd.concat(delivery_frames, ignore_index=True)
-    payouts = pd.DataFrame(payout_rows)
-    events = pd.DataFrame(event_rows).sort_values(["farmer_id", "start"])
+    rain = pd.DataFrame(rain_rows)
+    diagnoses = pd.DataFrame(diag_rows).sort_values(["farmer_id", "date"])
+    truth = pd.DataFrame(season_rows)
 
     coops.drop(columns="base_price").to_csv(out / "coops.csv", index=False)
     farmers.to_csv(out / "farmers.csv", index=False)
     deliveries.to_csv(out / "deliveries.csv", index=False)
     payouts.to_csv(out / "payouts.csv", index=False)
-    events.to_csv(out / "truth_events.csv", index=False)
-    print(f"farmers={len(farmers)} deliveries={len(deliveries)} days={n_days} "
-          f"events={len(events)} -> {out}")
+    rain.to_csv(out / "rainfall.csv", index=False)
+    diagnoses.to_csv(out / "diagnoses.csv", index=False)
+    truth.to_csv(out / "truth_seasons.csv", index=False)
+    # remove files from the old dairy version if present
+    for old in ["truth_events.csv"]:
+        (out / old).unlink(missing_ok=True)
+    print(f"farmers={len(farmers)} deliveries={len(deliveries)} diagnoses={len(diagnoses)} -> {out}")
 
 
 if __name__ == "__main__":
