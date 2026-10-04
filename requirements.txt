@@ -9,4 +9,3 @@ ultralytics
 onnxruntime
 pandas
 scikit-learn
-gunicorn
