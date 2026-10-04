@@ -3,7 +3,7 @@
 Runs offline on the coop phone (Termux) or any laptop:
 
     pip install flask
-    python hub/app.py            # then open http://127.0.0.1:5000
+    python hub/app.py
 
 Reuses shared/ for every number, so the dashboard, the SMS loop and the tests agree.
 """
@@ -12,15 +12,22 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent))   # repo root, so `import shared` works
-sys.path.insert(0, str(HERE))          # so `import dashboard` works
+ROOT = HERE.parent
+
+sys.path.insert(0, str(ROOT))  # import shared / backend
+sys.path.insert(0, str(HERE))  # import dashboard
 
 from flask import Flask, abort, render_template, request
 
 import dashboard
+from backend.routes.sms_webhook import sms_bp
+from backend.routes.ussd_webhook import ussd_bp
 
 app = Flask(__name__)
 
+# Africa's Talking webhook routes
+app.register_blueprint(sms_bp)
+app.register_blueprint(ussd_bp)
 _CACHE = {}
 
 
@@ -28,6 +35,7 @@ def _data(reload=False):
     """Aggregates are a little expensive over all farmers, so cache until reload."""
     if reload or "data" not in _CACHE:
         _CACHE["data"] = dashboard.build()
+
     return _CACHE["data"]
 
 
@@ -40,6 +48,7 @@ def _rwf(value):
 def _kg(value):
     if value is None:
         return "—"
+
     return f"{int(round(value)):,}"
 
 
@@ -52,10 +61,20 @@ def index():
 @app.route("/farmer/<farmer_id>")
 def farmer(farmer_id):
     row = dashboard.farmer(farmer_id)
+
     if row is None:
         abort(404)
-    return render_template("farmer.html", f=row, season=row["limit"]["season"] - 1)
+
+    return render_template(
+        "farmer.html",
+        f=row,
+        season=row["limit"]["season"] - 1,
+    )
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=5001,
+        debug=False,
+    )
