@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Review diagnosis — FarmFlow{% endblock %}
+{% block title %}{{ t('review_title') }} — FarmFlow{% endblock %}
 
 {% block content %}
 
 <section class="diagnosis-review">
 
-  <h1>Review leaf diagnosis</h1>
+  <h1>{{ t('review_title') }}</h1>
 
   <p class="sub">
-    Farmer:
+    {{ t('review_farmer') }}
     <strong>
       {{ farmer_id }} · {{ farmer.name }}
     </strong>
@@ -19,18 +19,18 @@
   {% if result.quality != "ok" %}
 
     <div class="diagnosis-card warning">
-      <h2>Photo needs to be retaken</h2>
+      <h2>{{ t('retake_title') }}</h2>
 
       {% if result.quality == "too_dark" %}
-        <p>The photo is too dark.</p>
+        <p>{{ t('too_dark') }}</p>
       {% elif result.quality == "too_blurry" %}
-        <p>The photo is too blurry.</p>
+        <p>{{ t('too_blurry') }}</p>
       {% else %}
-        <p>The photo could not be analyzed reliably.</p>
+        <p>{{ t('bad_photo') }}</p>
       {% endif %}
 
       <a href="/" class="action-btn secondary">
-        Back to dashboard
+        {{ t('back_dash') }}
       </a>
     </div>
 
@@ -39,25 +39,20 @@
 
     <div class="diagnosis-card warning">
 
-      <div class="diagnosis-label">Not sure</div>
+      <div class="diagnosis-label">{{ t('notsure_label') }}</div>
 
-      <h2>Ask the coop team</h2>
+      <h2>{{ t('notsure_title') }}</h2>
 
-      <p>
-        FarmFlow isn’t confident enough to diagnose this leaf, so it won’t
-        suggest a treatment or credit. Please keep the leaves and ask the
-        coop team — or the extension officer — to take a look.
-      </p>
+      <p>{{ t('notsure_body') }}</p>
 
       {% if result.confidence and result.class %}
       <p class="model-class">
-        Closest guess: {{ result.class }}
-        ({{ (result.confidence * 100) | round | int }}%), below the confidence threshold.
+        {{ t('closest_guess').format(cls=result.class, pct=(result.confidence * 100) | round | int) }}
       </p>
       {% endif %}
 
       <a href="/" class="action-btn secondary">
-        Back to dashboard
+        {{ t('back_dash') }}
       </a>
     </div>
 
@@ -67,28 +62,20 @@
     <div class="diagnosis-card">
 
       <div class="diagnosis-label">
-        AI diagnosis
+        {{ t('ai_diagnosis') }}
       </div>
 
-      <h2>
-        {% if result.diagnosis == "leaf_rust" %}
-          Coffee leaf rust
-        {% elif result.diagnosis == "leaf_miner" %}
-          Coffee leaf miner
-        {% else %}
-          {{ result.diagnosis | replace("_", " ") | title }}
-        {% endif %}
-      </h2>
+      <h2>{{ diag(result.diagnosis) }}</h2>
 
       <div class="confidence">
-        Confidence:
+        {{ t('confidence') }}
         <strong>
           {{ (result.confidence * 100) | round | int }}%
         </strong>
       </div>
 
       <p class="model-class">
-        Model class: {{ result.class }}
+        {{ t('model_class').format(cls=result.class) }}
       </p>
 
       <div class="review-actions">
@@ -119,7 +106,7 @@
             type="submit"
             class="action-btn confirm"
           >
-            Confirm diagnosis
+            {{ t('confirm') }}
           </button>
         </form>
 
@@ -138,7 +125,7 @@
             type="submit"
             class="action-btn secondary"
           >
-            Cancel
+            {{ t('cancel') }}
           </button>
         </form>
 

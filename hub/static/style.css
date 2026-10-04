@@ -90,11 +90,18 @@ h1, h2, h3 {
   font-size: 18px; color: #c9a988;
   padding-left: 11px; border-left: 1px solid rgba(201,169,136,.4);
 }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 18px; }
 .topbar .tag {
-  margin-left: auto;
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em;
   color: #c9a988;
 }
+.langnav { display: inline-flex; gap: 4px; border: 1px solid rgba(201,169,136,.35); border-radius: 999px; padding: 2px; }
+.langnav .lang {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  color: #c9a988; padding: 3px 10px; border-radius: 999px;
+}
+.langnav .lang:hover { color: #fbf2e6; }
+.langnav .lang.active { background: var(--caramel); color: #fff6ec; }
 
 main { max-width: 1200px; margin: 0 auto; padding: 36px 32px 8px; }
 footer {

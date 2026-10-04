@@ -20,6 +20,7 @@ sys.path.insert(0, str(HERE))  # import dashboard
 from flask import Flask, abort, render_template, request
 
 import dashboard
+from i18n import UI, DEFAULT_LANG, LANGS, make_t, diag_label
 from backend.routes.sms_webhook import sms_bp
 from backend.routes.ussd_webhook import ussd_bp
 from backend.routes.vision import vision_bp
@@ -30,6 +31,31 @@ app.register_blueprint(sms_bp)
 app.register_blueprint(ussd_bp)
 app.register_blueprint(vision_bp)
 _CACHE = {}
+
+
+def _current_lang():
+    """Language from ?lang=, else the saved cookie, else English."""
+    lang = request.args.get("lang") or request.cookies.get("lang") or DEFAULT_LANG
+    return lang if lang in UI else DEFAULT_LANG
+
+
+@app.context_processor
+def _inject_i18n():
+    lang = _current_lang()
+    return {
+        "lang": lang,
+        "langs": LANGS,
+        "t": make_t(lang),
+        "diag": lambda code: diag_label(code, lang),
+    }
+
+
+@app.after_request
+def _persist_lang(response):
+    chosen = request.args.get("lang")
+    if chosen in UI:
+        response.set_cookie("lang", chosen, max_age=60 * 60 * 24 * 365, samesite="Lax")
+    return response
 
 
 def _data(reload=False):
