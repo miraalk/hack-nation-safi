@@ -148,28 +148,31 @@
 
 .diagnosis-card {
   margin-top: 24px;
-  padding: 28px;
-  border: 1px solid #d9ded9;
-  border-radius: 12px;
-  background: #fff;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 .diagnosis-card.warning {
-  border-color: #ddd5b8;
+  border-color: #e4cf9f;
+  background: #fbf3e2;
 }
 
 .diagnosis-label {
-  margin-bottom: 8px;
-  font-size: 0.8rem;
+  margin-bottom: 10px;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.6;
+  letter-spacing: 0.16em;
+  color: var(--caramel);
 }
 
 .diagnosis-card h2 {
   margin: 0 0 14px;
-  font-size: 1.8rem;
+  font-size: 2rem;
+  font-variation-settings: "opsz" 120;
 }
 
 .confidence {
@@ -190,28 +193,29 @@
 
 .action-btn {
   display: inline-block;
-  padding: 10px 16px;
-  border-radius: 7px;
-  border: 1px solid #c8cec9;
+  padding: 11px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
   cursor: pointer;
   text-decoration: none;
   font: inherit;
+  font-weight: 700;
+  letter-spacing: .02em;
 }
 
 .action-btn.confirm {
-  background: #1f6b3a;
-  border-color: #1f6b3a;
-  color: white;
+  background: var(--caramel);
+  border-color: var(--caramel);
+  color: #fff6ec;
 }
 
 .action-btn.secondary {
-  background: white;
-  color: #333;
+  background: var(--surface);
+  color: var(--roast);
 }
 
-.action-btn:hover {
-  opacity: 0.9;
-}
+.action-btn:hover { opacity: 0.9; }
+.confidence strong { color: var(--roast); }
 </style>
 
 {% endblock %}

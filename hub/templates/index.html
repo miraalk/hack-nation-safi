@@ -4,42 +4,46 @@
 {% block content %}
 
 <section class="hero">
-  <h1>Cooperative overview</h1>
-
+  <p class="eyebrow">FarmFlow · Season {{ season }} harvest</p>
+  <h1>Cooperative <em>overview</em></h1>
   <p class="sub">
-    Season {{ season }} harvest ·
-    {{ overall.farmers | rwf }} farmers across
-    {{ overall.coops }} cooperatives
+    {{ overall.farmers | rwf }} farmers across {{ overall.coops }} cooperatives,
+    their deliveries, forecasts and the credit waiting on a coop-staff approval.
   </p>
 
-  <div class="cards">
-    <div class="card">
-      <div class="n">{{ overall.farmers | rwf }}</div>
-      <div class="l">Farmers</div>
+  <div class="hero-grid">
+    <div class="feature-stat">
+      <p class="eyebrow">Credit pending approval</p>
+      <div class="big">{{ overall.pending_rwf | rwf }} <small>RWF</small></div>
+      <p>Proposed across all cooperatives, each waiting for a coop staff member to reply “OK”.</p>
     </div>
 
-    <div class="card">
-      <div class="n">{{ overall.trees | rwf }}</div>
-      <div class="l">Coffee trees</div>
-    </div>
-
-    <div class="card">
-      <div class="n">{{ overall.latest_kg | kg }}</div>
-      <div class="l">Cherry delivered, {{ season }} (kg)</div>
-    </div>
-
-    <div class="card">
-      <div class="n">{{ overall.total_kg | kg }}</div>
-      <div class="l">Cherry all-time (kg)</div>
-    </div>
-
-    <div class="card accent">
-      <div class="n">{{ overall.pending_rwf | rwf }}</div>
-      <div class="l">Credit pending approval (RWF)</div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="n">{{ overall.farmers | rwf }}</div>
+        <div class="l">Farmers</div>
+      </div>
+      <div class="stat">
+        <div class="n">{{ overall.trees | rwf }}</div>
+        <div class="l">Coffee trees</div>
+      </div>
+      <div class="stat">
+        <div class="n">{{ overall.latest_kg | kg }}</div>
+        <div class="l">Cherry delivered, {{ season }} (kg)</div>
+      </div>
+      <div class="stat">
+        <div class="n">{{ overall.total_kg | kg }}</div>
+        <div class="l">Cherry all-time (kg)</div>
+      </div>
     </div>
   </div>
 </section>
 
+
+<div class="section-head">
+  <h2>Cooperatives</h2>
+  <span class="rule"></span>
+</div>
 
 <section class="coops">
   {% for c in coops %}
@@ -69,6 +73,11 @@
   {% endfor %}
 </section>
 
+
+<div class="section-head">
+  <h2>Farmers</h2>
+  <span class="rule"></span>
+</div>
 
 <section class="table-wrap">
 
@@ -275,24 +284,28 @@
   gap: 6px;
 
   min-width: 98px;
-  padding: 7px 10px;
+  padding: 7px 12px;
 
-  border: 1px solid #c8cec9;
-  border-radius: 7px;
+  border: 1px solid var(--caramel);
+  border-radius: 999px;
 
   background: #fff;
+  color: var(--roast);
 
   cursor: pointer;
   white-space: nowrap;
 
-  font-size: 0.82rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: .02em;
   line-height: 1;
 
   user-select: none;
 }
 
 .diagnose-btn:hover {
-  background: #f3f6f3;
+  background: var(--caramel);
+  color: #fff6ec;
 }
 
 .diagnose-btn.loading {
@@ -307,8 +320,8 @@
   width: 13px;
   height: 13px;
 
-  border: 2px solid #c7cec8;
-  border-top-color: #1f6b3a;
+  border: 2px solid #e4d4c2;
+  border-top-color: var(--caramel);
   border-radius: 50%;
 
   animation: diagnosis-spin 0.7s linear infinite;

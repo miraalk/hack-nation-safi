@@ -8,7 +8,10 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="{{ url_for('index') }}">FarmFlow <span>hub</span></a>
+    <a class="brand" href="{{ url_for('index') }}">
+      <img class="logo" src="{{ url_for('static', filename='img/farmflow-logo.png') }}" alt="FarmFlow">
+      <span class="brand-sub">hub</span>
+    </a>
     <span class="tag">offline · coop washing station</span>
   </header>
   <main>
