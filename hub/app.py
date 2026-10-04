@@ -8,6 +8,7 @@ Runs offline on the coop phone (Termux) or any laptop:
 Reuses shared/ for every number, so the dashboard, the SMS loop and the tests agree.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -100,8 +101,10 @@ def farmer(farmer_id):
 
 
 if __name__ == "__main__":
+    # Hosts (Railway, etc.) inject the port to bind on via $PORT.
+    port = int(os.environ.get("PORT", 5001))
     app.run(
         host="0.0.0.0",
-        port=5001,
+        port=port,
         debug=False,
     )
