@@ -1,0 +1,11 @@
+Flask
+gunicorn
+requests
+numpy<2
+Pillow
+torch
+torchvision
+ultralytics
+onnxruntime
+pandas
+scikit-learn
