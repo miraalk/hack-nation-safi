@@ -8,7 +8,6 @@ from flask import Blueprint, redirect, render_template, request
 from werkzeug.utils import secure_filename
 
 from shared.data import load_farmers
-from vision.predict import LeafModel
 
 
 vision_bp = Blueprint("vision", __name__)
@@ -52,13 +51,27 @@ def get_model():
     if _model is None:
         start = time.perf_counter()
 
+        print("Loading vision dependencies...")
+
+        # IMPORTANT:
+        # Import Ultralytics/LeafModel only when vision
+        # is actually requested.
+        from vision.predict import LeafModel
+
+        print(
+            f"Vision dependencies imported in "
+            f"{time.perf_counter() - start:.3f}s"
+        )
+
+        model_start = time.perf_counter()
+
         print("Loading vision model...")
 
         _model = LeafModel()
 
         print(
             f"Vision model ready in "
-            f"{time.perf_counter() - start:.3f}s"
+            f"{time.perf_counter() - model_start:.3f}s"
         )
 
     return _model
@@ -164,13 +177,14 @@ def diagnose():
             repr(exc),
         )
 
-        delete_image(
-            image_filename
-        )
-
         return (
             "Could not analyze image.",
             500,
+        )
+
+    finally:
+        delete_image(
+            image_filename
         )
 
     print(
@@ -200,7 +214,6 @@ def diagnose():
         farmer_id=farmer_id,
         farmer=farmer,
         result=result,
-        image_filename=image_filename,
     )
 
     print(
@@ -234,39 +247,18 @@ def confirm_diagnosis():
         "",
     ).strip()
 
-    image_filename = request.form.get(
-        "image_filename",
-        "",
-    ).strip()
-
     if not farmer_id or not diagnosis:
         return (
             "Missing diagnosis information",
             400,
         )
 
-    farmers_start = time.perf_counter()
-
     farmers = load_farmers()
-
-    print(
-        f"confirm load_farmers: "
-        f"{time.perf_counter() - farmers_start:.3f}s"
-    )
 
     if farmer_id not in farmers:
         return "Unknown farmer", 404
 
     if diagnosis == "unknown":
-        delete_image(
-            image_filename
-        )
-
-        print(
-            f"TOTAL /diagnose/confirm: "
-            f"{time.perf_counter() - total_start:.3f}s"
-        )
-
         return redirect("/")
 
     save_start = time.perf_counter()
@@ -301,21 +293,7 @@ def confirm_diagnosis():
 
 @vision_bp.post("/diagnose/cancel")
 def cancel_diagnosis():
-    total_start = time.perf_counter()
-
-    image_filename = request.form.get(
-        "image_filename",
-        "",
-    ).strip()
-
-    delete_image(
-        image_filename
-    )
-
-    print(
-        f"TOTAL /diagnose/cancel: "
-        f"{time.perf_counter() - total_start:.3f}s"
-    )
+    print("Diagnosis review cancelled")
 
     return redirect("/")
 
