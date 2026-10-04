@@ -32,3 +32,14 @@ def find_farmer_by_phone(phone: str):
             }
 
     return None
+
+def find_farmer_by_id(farmer_id: str):
+    farmer = _FARMERS.get(farmer_id)
+
+    if farmer is None:
+        return None
+
+    return {
+        "farmer_id": farmer_id,
+        **farmer,
+    }

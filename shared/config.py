@@ -3,7 +3,7 @@
 # Advance rule: limit = ALPHA * (P10 forecast kg x first-payment price) - outstanding, capped.
 # Conservative: uses the low-end forecast and ignores the second payment.
 ALPHA = 0.30
-CAP_RWF = 300_000      # raised with real prices: one bag of subsidised NPK is ~RWF 93,000
+CAP_RWF = 500_000      # raised with real prices: one bag of subsidised NPK is ~RWF 93,000
 ROUND_TO_RWF = 1_000
 
 # Confidence thresholds: below these the model says "not sure, ask a person".
