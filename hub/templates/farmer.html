@@ -2,20 +2,19 @@
 {% block title %}{{ f.farmer_id }} · {{ f.name }}{% endblock %}
 {% block content %}
 
-<a class="back" href="{{ url_for('index') }}">← All farmers</a>
+<a class="back" href="{{ url_for('index') }}">{{ t('back_all') }}</a>
 
 <section class="hero">
   <h1>{{ f.name }}</h1>
   <p class="sub">
-    {{ f.farmer_id }} · {{ f.coop_name }} ({{ f.district }}) · {{ f.village }} ·
-    {{ f.trees | rwf }} trees · member since {{ f.member_since }}
-    <span class="pill {{ f.status }}">{{ f.status_label }}</span>
+    {{ t('farmer_meta').format(id=f.farmer_id, coop=f.coop_name, district=f.district, village=f.village, trees=f.trees | rwf, since=f.member_since) }}
+    <span class="pill {{ f.status }}">{{ t('status_' ~ f.status) }}</span>
   </p>
 </section>
 
 <div class="detail">
   <section class="panel">
-    <h3>Cherry delivered by season (kg)</h3>
+    <h3>{{ t('panel_deliveries') }}</h3>
     {% if f.seasons %}
     {% set maxkg = f.seasons.values() | max %}
     <div class="bars">
@@ -28,48 +27,48 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted">No deliveries recorded yet.</p>
+    <p class="muted">{{ t('no_deliveries') }}</p>
     {% endif %}
   </section>
 
   <section class="panel">
-    <h3>Harvest forecast — season {{ f.limit.season }}</h3>
+    <h3>{{ t('panel_forecast').format(season=f.limit.season) }}</h3>
     {% if f.limit.forecast_p50_kg is not none %}
     <table class="kv">
-      <tr><td>Low (P10)</td><td class="num">{{ f.limit.forecast_p10_kg | kg }} kg</td></tr>
-      <tr><td>Expected (P50)</td><td class="num"><b>{{ f.limit.forecast_p50_kg | kg }} kg</b></td></tr>
-      <tr><td>High (P90)</td><td class="num">{{ f.limit.forecast_p90_kg | kg }} kg</td></tr>
-      <tr><td>Seasons of history</td><td class="num">{{ f.limit.seasons_of_history }}</td></tr>
+      <tr><td>{{ t('fc_low') }}</td><td class="num">{{ f.limit.forecast_p10_kg | kg }} {{ t('unit_kg') }}</td></tr>
+      <tr><td>{{ t('fc_exp') }}</td><td class="num"><b>{{ f.limit.forecast_p50_kg | kg }} {{ t('unit_kg') }}</b></td></tr>
+      <tr><td>{{ t('fc_high') }}</td><td class="num">{{ f.limit.forecast_p90_kg | kg }} {{ t('unit_kg') }}</td></tr>
+      <tr><td>{{ t('fc_hist') }}</td><td class="num">{{ f.limit.seasons_of_history }}</td></tr>
     </table>
     {% else %}
-    <p class="muted">{{ f.limit.seasons_of_history }} season(s) of history — too thin to forecast.</p>
+    <p class="muted">{{ t('fc_thin').format(n=f.limit.seasons_of_history) }}</p>
     {% endif %}
   </section>
 
   <section class="panel">
-    <h3>Proposed input credit</h3>
-    <div class="limit">{{ f.limit.limit_rwf | rwf }} <span>RWF</span></div>
+    <h3>{{ t('panel_credit') }}</h3>
+    <div class="limit">{{ f.limit.limit_rwf | rwf }} <span>{{ t('unit_rwf') }}</span></div>
     <p class="muted">{{ f.explain }}</p>
     <table class="kv">
-      <tr><td>Status</td><td><span class="pill {{ f.status }}">{{ f.status_label }}</span></td></tr>
-      <tr><td>First-payment price</td><td class="num">{{ f.limit.price_rwf_per_kg | rwf }} RWF/kg</td></tr>
-      <tr><td>Outstanding</td><td class="num">{{ f.limit.outstanding_rwf | rwf }} RWF</td></tr>
-      <tr><td>Approved by</td><td>{{ f.limit.approved_by or '—' }}</td></tr>
-      <tr><td>Computed at</td><td>{{ f.limit.computed_at }}</td></tr>
-      <tr><td>Model</td><td>{{ f.limit.model_version }}</td></tr>
+      <tr><td>{{ t('credit_status') }}</td><td><span class="pill {{ f.status }}">{{ t('status_' ~ f.status) }}</span></td></tr>
+      <tr><td>{{ t('credit_price') }}</td><td class="num">{{ f.limit.price_rwf_per_kg | rwf }} {{ t('unit_rwf_kg') }}</td></tr>
+      <tr><td>{{ t('credit_outstanding') }}</td><td class="num">{{ f.limit.outstanding_rwf | rwf }} {{ t('unit_rwf') }}</td></tr>
+      <tr><td>{{ t('credit_approved_by') }}</td><td>{{ f.limit.approved_by or '—' }}</td></tr>
+      <tr><td>{{ t('credit_computed') }}</td><td>{{ f.limit.computed_at }}</td></tr>
+      <tr><td>{{ t('credit_model') }}</td><td>{{ f.limit.model_version }}</td></tr>
     </table>
   </section>
 
   <section class="panel">
-    <h3>Diagnoses</h3>
+    <h3>{{ t('panel_diagnoses') }}</h3>
     {% if f.diagnoses %}
     <table class="kv">
       {% for dt, dx in f.diagnoses | reverse %}
-      <tr><td>{{ dt }}</td><td>{{ dx }}</td></tr>
+      <tr><td>{{ dt }}</td><td>{{ diag(dx) }}</td></tr>
       {% endfor %}
     </table>
     {% else %}
-    <p class="muted">No confirmed diagnoses.</p>
+    <p class="muted">{{ t('no_diagnoses') }}</p>
     {% endif %}
   </section>
 </div>

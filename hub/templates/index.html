@@ -1,39 +1,38 @@
 {% extends "base.html" %}
-{% block title %}FarmFlow hub — all farmers{% endblock %}
+{% block title %}{{ t('page_title_index') }}{% endblock %}
 
 {% block content %}
 
 <section class="hero">
-  <p class="eyebrow">FarmFlow · Season {{ season }} harvest</p>
-  <h1>Cooperative <em>overview</em></h1>
+  <p class="eyebrow">{{ t('hero_eyebrow').format(season=season) }}</p>
+  <h1>{{ t('hero_title_a') }} <em>{{ t('hero_title_b') }}</em></h1>
   <p class="sub">
-    {{ overall.farmers | rwf }} farmers across {{ overall.coops }} cooperatives,
-    their deliveries, forecasts and the credit waiting on a coop-staff approval.
+    {{ t('hero_sub').format(farmers=overall.farmers | rwf, coops=overall.coops) }}
   </p>
 
   <div class="hero-grid">
     <div class="feature-stat">
-      <p class="eyebrow">Credit pending approval</p>
-      <div class="big">{{ overall.pending_rwf | rwf }} <small>RWF</small></div>
-      <p>Proposed across all cooperatives, each waiting for a coop staff member to reply “OK”.</p>
+      <p class="eyebrow">{{ t('credit_pending') }}</p>
+      <div class="big">{{ overall.pending_rwf | rwf }} <small>{{ t('unit_rwf') }}</small></div>
+      <p>{{ t('feature_note') }}</p>
     </div>
 
     <div class="stat-row">
       <div class="stat">
         <div class="n">{{ overall.farmers | rwf }}</div>
-        <div class="l">Farmers</div>
+        <div class="l">{{ t('stat_farmers') }}</div>
       </div>
       <div class="stat">
         <div class="n">{{ overall.trees | rwf }}</div>
-        <div class="l">Coffee trees</div>
+        <div class="l">{{ t('stat_trees') }}</div>
       </div>
       <div class="stat">
         <div class="n">{{ overall.latest_kg | kg }}</div>
-        <div class="l">Cherry delivered, {{ season }} (kg)</div>
+        <div class="l">{{ t('stat_cherry_season').format(season=season) }}</div>
       </div>
       <div class="stat">
         <div class="n">{{ overall.total_kg | kg }}</div>
-        <div class="l">Cherry all-time (kg)</div>
+        <div class="l">{{ t('stat_cherry_all') }}</div>
       </div>
     </div>
   </div>
@@ -41,7 +40,7 @@
 
 
 <div class="section-head">
-  <h2>Cooperatives</h2>
+  <h2>{{ t('sec_coops') }}</h2>
   <span class="rule"></span>
 </div>
 
@@ -51,22 +50,20 @@
     <h3>{{ c.name }}</h3>
 
     <div class="coop-meta">
-      {{ c.district }} district ·
-      {{ c.farmers }} farmers ·
-      {{ c.price | rwf }} RWF/kg ({{ season }})
+      {{ t('coop_meta').format(district=c.district, farmers=c.farmers, price=c.price | rwf, season=season) }}
     </div>
 
     <div class="coop-stats">
       <span>
-        <b>{{ c.latest_kg | kg }}</b> kg this season
+        <b>{{ c.latest_kg | kg }}</b> {{ t('coop_kg_season') }}
       </span>
 
       <span>
-        <b>{{ c.trees | rwf }}</b> trees
+        <b>{{ c.trees | rwf }}</b> {{ t('coop_trees') }}
       </span>
 
       <span>
-        <b>{{ c.pending_rwf | rwf }}</b> RWF pending
+        <b>{{ c.pending_rwf | rwf }}</b> {{ t('coop_pending') }}
       </span>
     </div>
   </div>
@@ -75,7 +72,7 @@
 
 
 <div class="section-head">
-  <h2>Farmers</h2>
+  <h2>{{ t('sec_farmers') }}</h2>
   <span class="rule"></span>
 </div>
 
@@ -85,13 +82,13 @@
     <input
       id="search"
       type="search"
-      placeholder="Search farmer, id or village…"
+      placeholder="{{ t('search_ph') }}"
       autocomplete="off"
     >
 
     <label class="chk">
       <input type="checkbox" id="demoOnly">
-      Demo farmers only
+      {{ t('demo_only') }}
     </label>
 
     <span class="count" id="count"></span>
@@ -102,18 +99,18 @@
 
     <thead>
       <tr>
-        <th data-sort="str">Farmer</th>
-        <th data-sort="str">Coop</th>
-        <th data-sort="str">Village</th>
-        <th data-sort="num">Trees</th>
-        <th data-sort="num">{{ season }} kg</th>
-        <th data-sort="num">All-time kg</th>
-        <th data-sort="num">Seasons</th>
-        <th data-sort="num">Forecast P50</th>
-        <th data-sort="num">Credit (RWF)</th>
-        <th data-sort="str">Status</th>
-        <th data-sort="str">Latest issue</th>
-        <th>Action</th>
+        <th data-sort="str">{{ t('th_farmer') }}</th>
+        <th data-sort="str">{{ t('th_coop') }}</th>
+        <th data-sort="str">{{ t('th_village') }}</th>
+        <th data-sort="num">{{ t('th_trees') }}</th>
+        <th data-sort="num">{{ t('th_season_kg').format(season=season) }}</th>
+        <th data-sort="num">{{ t('th_all_kg') }}</th>
+        <th data-sort="num">{{ t('th_seasons') }}</th>
+        <th data-sort="num">{{ t('th_forecast') }}</th>
+        <th data-sort="num">{{ t('th_credit') }}</th>
+        <th data-sort="str">{{ t('th_status') }}</th>
+        <th data-sort="str">{{ t('th_issue') }}</th>
+        <th>{{ t('th_action') }}</th>
       </tr>
     </thead>
 
@@ -185,12 +182,12 @@
 
         <td data-v="{{ r.status }}">
           <span class="pill {{ r.status }}">
-            {{ r.status_label }}
+            {{ t('status_' ~ r.status) }}
           </span>
         </td>
 
         <td>
-          {{ r.latest_diag or '—' }}
+          {{ diag(r.latest_diag) }}
         </td>
 
         <td>
@@ -218,7 +215,7 @@
               </span>
 
               <span class="diagnose-text">
-                Diagnose
+                {{ t('diagnose') }}
               </span>
 
               <span
@@ -349,6 +346,9 @@
 
 <script>
 
+const T_ANALYZING = {{ t('analyzing') | tojson }};
+const T_SHOWN = {{ t('shown') | tojson }};
+
 const table = document.getElementById('farmers');
 const tbody = table.tBodies[0];
 
@@ -376,7 +376,7 @@ function startDiagnosis(input) {
 
   button.classList.add('loading');
 
-  text.textContent = 'Analyzing…';
+  text.textContent = T_ANALYZING;
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -404,7 +404,7 @@ function apply() {
     }
   }
 
-  count.textContent = shown + ' shown';
+  count.textContent = shown + ' ' + T_SHOWN;
 }
 
 

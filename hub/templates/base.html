@@ -12,14 +12,21 @@
       <img class="logo" src="{{ url_for('static', filename='img/farmflow-logo.png') }}" alt="FarmFlow">
       <span class="brand-sub">hub</span>
     </a>
-    <span class="tag">offline · coop washing station</span>
+    <div class="topbar-right">
+      <span class="tag">{{ t('hub_tag') }}</span>
+      <nav class="langnav" aria-label="Language">
+        {% for code, label in langs %}
+        <a class="lang {{ 'active' if lang == code else '' }}"
+           href="{{ request.path }}?lang={{ code }}" title="{{ label }}">{{ code | upper }}</a>
+        {% endfor %}
+      </nav>
+    </div>
   </header>
   <main>
     {% block content %}{% endblock %}
   </main>
   <footer>
-    Synthetic data for a hackathon prototype. Numbers reuse <code>shared/</code>, so they
-    match the SMS loop and tests.
+    {{ t('footer') | safe }}
   </footer>
   {% block scripts %}{% endblock %}
 </body>
