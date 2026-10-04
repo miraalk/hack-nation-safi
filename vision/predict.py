@@ -1,75 +1,190 @@
-"""Classify one coffee leaf photo on the hub, offline.
+"""Detect coffee leaf disease from one photo, offline.
 
-NOT RUN YET (no trained model). Needs: onnxruntime, numpy, pillow.
-On Termux, check onnxruntime installs first; if not, use the native app route
-(ONNX Runtime Mobile or TFLite) and keep this file as the reference logic.
+Uses:
+    vision/models/decafia/decafia_clean_best.pt
 
-Usage: python vision/predict.py path/to/leaf.jpg
+DECAFIA classes:
+    0 roya     -> coffee leaf rust
+    1 coco     -> weevil / coco damage
+    2 minador  -> leaf miner
 
-Returns {"class", "confidence", "diagnosis", "sure", "quality"}:
-- quality "too_dark" / "too_blurry" -> no prediction, ask for a new photo
-- confidence below the threshold chosen in training -> "unknown", refer to a person
+A photo with no detection above the confidence threshold is treated as
+"inconclusive" rather than automatically healthy.
+
+Usage:
+    python vision/predict.py path/to/leaf.jpg
 """
 
-import json
 import sys
 from pathlib import Path
 
 import numpy as np
-import onnxruntime as ort
 from PIL import Image, ImageFilter
+from ultralytics import YOLO
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent))
+ROOT = HERE.parent
+
+sys.path.insert(0, str(ROOT))
+
 from shared.diagnoses import VISION_CLASS_TO_DIAGNOSIS
 
-MIN_BRIGHTNESS = 40      # mean pixel value 0-255
-MIN_SHARPNESS = 60.0     # variance of edge image; lower = blurry
+
+MODEL_PATH = (
+    HERE
+    / "models"
+    / "decafia"
+    / "decafia_clean_best.pt"
+)
+
+CONFIDENCE_THRESHOLD = 0.50
+
+MIN_BRIGHTNESS = 40
+MIN_SHARPNESS = 60.0
+
+
+CLASS_TO_FARMFLOW = {
+    "roya": "leaf_rust",
+    "minador": "leaf_miner",
+
+    # Keep this separate unless your downstream recommendation
+    # logic has a specific treatment for it.
+    "coco": "unknown",
+}
 
 
 class LeafModel:
-    def __init__(self, model_path=HERE / "leaf_model.int8.onnx", labels_path=HERE / "leaf_labels.json"):
-        meta = json.loads(Path(labels_path).read_text())
-        self.classes, self.size = meta["classes"], meta["image_size"]
-        self.mean = np.array(meta["mean"], dtype=np.float32).reshape(3, 1, 1)
-        self.std = np.array(meta["std"], dtype=np.float32).reshape(3, 1, 1)
-        self.threshold = meta["threshold"]
-        self.session = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
+    def __init__(self, model_path=MODEL_PATH):
+        self.model = YOLO(str(model_path))
+
+        print("Vision model:", model_path.name)
+        print("Vision classes:", self.model.names)
 
     def quality(self, img):
         gray = img.convert("L")
-        if np.asarray(gray).mean() < MIN_BRIGHTNESS:
+
+        brightness = np.asarray(
+            gray,
+            dtype=np.float32,
+        ).mean()
+
+        if brightness < MIN_BRIGHTNESS:
             return "too_dark"
-        edges = np.asarray(gray.filter(ImageFilter.FIND_EDGES), dtype=np.float32)
+
+        edges = np.asarray(
+            gray.filter(ImageFilter.FIND_EDGES),
+            dtype=np.float32,
+        )
+
         if edges.var() < MIN_SHARPNESS:
             return "too_blurry"
+
         return "ok"
 
-    def preprocess(self, img):
-        img = img.convert("RGB")
-        w, h = img.size
-        s = 256 / min(w, h)
-        img = img.resize((round(w * s), round(h * s)))
-        w, h = img.size
-        left, top = (w - self.size) // 2, (h - self.size) // 2
-        img = img.crop((left, top, left + self.size, top + self.size))
-        x = np.asarray(img, dtype=np.float32).transpose(2, 0, 1) / 255.0
-        return ((x - self.mean) / self.std)[None]
-
     def classify(self, path):
-        img = Image.open(path)
-        q = self.quality(img)
-        if q != "ok":
-            return {"class": None, "confidence": 0.0, "diagnosis": "unknown", "sure": False, "quality": q}
-        logits = self.session.run(None, {"image": self.preprocess(img)})[0][0]
-        p = np.exp(logits - logits.max())
-        p /= p.sum()
-        i = int(p.argmax())
-        cls, conf = self.classes[i], float(p[i])
-        sure = conf >= self.threshold
-        diag = VISION_CLASS_TO_DIAGNOSIS.get(cls.lower(), "unknown") if sure else "unknown"
-        return {"class": cls, "confidence": round(conf, 3), "diagnosis": diag, "sure": sure, "quality": "ok"}
+        img = Image.open(path).convert("RGB")
+
+        quality = self.quality(img)
+
+        if quality != "ok":
+            return {
+                "class": None,
+                "confidence": 0.0,
+                "diagnosis": "unknown",
+                "sure": False,
+                "quality": quality,
+                "detections": [],
+            }
+
+        results = self.model.predict(
+            source=str(path),
+            conf=CONFIDENCE_THRESHOLD,
+            verbose=False,
+        )
+
+        result = results[0]
+        detections = []
+
+        if result.boxes is not None:
+            for box in result.boxes:
+                class_id = int(box.cls[0])
+                confidence = float(box.conf[0])
+
+                class_name = result.names[class_id]
+
+                xyxy = box.xyxy[0].tolist()
+
+                detections.append({
+                    "class_id": class_id,
+                    "class": class_name,
+                    "confidence": round(
+                        confidence,
+                        3,
+                    ),
+                    "box": [
+                        round(float(x), 1)
+                        for x in xyxy
+                    ],
+                })
+
+        detections.sort(
+            key=lambda d: d["confidence"],
+            reverse=True,
+        )
+
+        if detections:
+            print(
+                f"Detected {len(detections)} regions. "
+                f"Best: {detections[0]['class']} "
+                f"({detections[0]['confidence']:.3f})"
+            )
+        else:
+            print("No confident detections.")
+
+        if not detections:
+            return {
+                "class": None,
+                "confidence": 0.0,
+                "diagnosis": "unknown",
+                "sure": False,
+                "quality": "ok",
+                "detections": [],
+            }
+
+        best = detections[0]
+
+        cls = best["class"]
+        confidence = best["confidence"]
+
+        diagnosis = CLASS_TO_FARMFLOW.get(
+            cls.lower(),
+            VISION_CLASS_TO_DIAGNOSIS.get(
+                cls.lower(),
+                "unknown",
+            ),
+        )
+
+        return {
+            "class": cls,
+            "confidence": confidence,
+            "diagnosis": diagnosis,
+            "sure": diagnosis != "unknown",
+            "quality": "ok",
+        }
 
 
 if __name__ == "__main__":
-    print(LeafModel().classify(sys.argv[1]))
+    if len(sys.argv) != 2:
+        print(
+            "Usage: python vision/predict.py "
+            "path/to/leaf.jpg"
+        )
+        raise SystemExit(1)
+
+    model = LeafModel()
+
+    result = model.classify(
+        sys.argv[1]
+    )
+
+    print(result)

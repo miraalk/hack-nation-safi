@@ -33,14 +33,20 @@ TEXT_LABEL_TO_DIAGNOSIS = {
 
 # Vision classes depend on the BRACOL folder names. Martin: map each folder here.
 VISION_CLASS_TO_DIAGNOSIS = {
-    "healthy":   "healthy",
-    "rust":      "leaf_rust",
+    "healthy": "healthy",
+
+    "rust": "leaf_rust",
     "leaf_rust": "leaf_rust",
-    "miner":     "leaf_miner",
+
+    "miner": "leaf_miner",
     "leaf_miner": "leaf_miner",
+
     "cercospora": "brown_eye_spot",
+    "cerscospora": "brown_eye_spot",
+
     "brown_leaf_spot": "brown_eye_spot",
-    "phoma":     "unknown",
+
+    "phoma": "phoma",
 }
 
 # Diagnoses that need a photo or a person before any treatment is suggested

@@ -1,40 +1,96 @@
 {% extends "base.html" %}
 {% block title %}FarmFlow hub — all farmers{% endblock %}
+
 {% block content %}
 
 <section class="hero">
   <h1>Cooperative overview</h1>
-  <p class="sub">Season {{ season }} harvest · {{ overall.farmers | rwf }} farmers across {{ overall.coops }} cooperatives</p>
+
+  <p class="sub">
+    Season {{ season }} harvest ·
+    {{ overall.farmers | rwf }} farmers across
+    {{ overall.coops }} cooperatives
+  </p>
+
   <div class="cards">
-    <div class="card"><div class="n">{{ overall.farmers | rwf }}</div><div class="l">Farmers</div></div>
-    <div class="card"><div class="n">{{ overall.trees | rwf }}</div><div class="l">Coffee trees</div></div>
-    <div class="card"><div class="n">{{ overall.latest_kg | kg }}</div><div class="l">Cherry delivered, {{ season }} (kg)</div></div>
-    <div class="card"><div class="n">{{ overall.total_kg | kg }}</div><div class="l">Cherry all-time (kg)</div></div>
-    <div class="card accent"><div class="n">{{ overall.pending_rwf | rwf }}</div><div class="l">Credit pending approval (RWF)</div></div>
+    <div class="card">
+      <div class="n">{{ overall.farmers | rwf }}</div>
+      <div class="l">Farmers</div>
+    </div>
+
+    <div class="card">
+      <div class="n">{{ overall.trees | rwf }}</div>
+      <div class="l">Coffee trees</div>
+    </div>
+
+    <div class="card">
+      <div class="n">{{ overall.latest_kg | kg }}</div>
+      <div class="l">Cherry delivered, {{ season }} (kg)</div>
+    </div>
+
+    <div class="card">
+      <div class="n">{{ overall.total_kg | kg }}</div>
+      <div class="l">Cherry all-time (kg)</div>
+    </div>
+
+    <div class="card accent">
+      <div class="n">{{ overall.pending_rwf | rwf }}</div>
+      <div class="l">Credit pending approval (RWF)</div>
+    </div>
   </div>
 </section>
+
 
 <section class="coops">
   {% for c in coops %}
   <div class="coop">
     <h3>{{ c.name }}</h3>
-    <div class="coop-meta">{{ c.district }} district · {{ c.farmers }} farmers · {{ c.price | rwf }} RWF/kg ({{ season }})</div>
+
+    <div class="coop-meta">
+      {{ c.district }} district ·
+      {{ c.farmers }} farmers ·
+      {{ c.price | rwf }} RWF/kg ({{ season }})
+    </div>
+
     <div class="coop-stats">
-      <span><b>{{ c.latest_kg | kg }}</b> kg this season</span>
-      <span><b>{{ c.trees | rwf }}</b> trees</span>
-      <span><b>{{ c.pending_rwf | rwf }}</b> RWF pending</span>
+      <span>
+        <b>{{ c.latest_kg | kg }}</b> kg this season
+      </span>
+
+      <span>
+        <b>{{ c.trees | rwf }}</b> trees
+      </span>
+
+      <span>
+        <b>{{ c.pending_rwf | rwf }}</b> RWF pending
+      </span>
     </div>
   </div>
   {% endfor %}
 </section>
 
+
 <section class="table-wrap">
+
   <div class="controls">
-    <input id="search" type="search" placeholder="Search farmer, id or village…" autocomplete="off">
-    <label class="chk"><input type="checkbox" id="demoOnly"> Demo farmers only</label>
+    <input
+      id="search"
+      type="search"
+      placeholder="Search farmer, id or village…"
+      autocomplete="off"
+    >
+
+    <label class="chk">
+      <input type="checkbox" id="demoOnly">
+      Demo farmers only
+    </label>
+
     <span class="count" id="count"></span>
   </div>
+
+
   <table id="farmers">
+
     <thead>
       <tr>
         <th data-sort="str">Farmer</th>
@@ -48,72 +104,383 @@
         <th data-sort="num">Credit (RWF)</th>
         <th data-sort="str">Status</th>
         <th data-sort="str">Latest issue</th>
+        <th>Action</th>
       </tr>
     </thead>
+
+
     <tbody>
+
       {% for r in rows %}
-      <tr data-demo="{{ r.is_demo }}" data-search="{{ (r.farmer_id ~ ' ' ~ r.name ~ ' ' ~ r.village) | lower }}">
-        <td><a href="{{ url_for('farmer', farmer_id=r.farmer_id) }}">{{ r.farmer_id }} · {{ r.name }}</a></td>
-        <td>{{ r.coop_name }}</td>
-        <td>{{ r.village }}</td>
-        <td data-v="{{ r.trees }}" class="num">{{ r.trees | rwf }}</td>
-        <td data-v="{{ r.latest_kg }}" class="num">{{ r.latest_kg | kg }}</td>
-        <td data-v="{{ r.total_kg }}" class="num">{{ r.total_kg | kg }}</td>
-        <td data-v="{{ r.n_seasons }}" class="num">{{ r.n_seasons }}</td>
-        <td data-v="{{ r.forecast_p50 or 0 }}" class="num">{{ r.forecast_p50 | kg }}</td>
-        <td data-v="{{ r.limit.limit_rwf }}" class="num">{{ r.limit.limit_rwf | rwf }}</td>
-        <td data-v="{{ r.status }}"><span class="pill {{ r.status }}">{{ r.status_label }}</span></td>
-        <td>{{ r.latest_diag or '—' }}</td>
+
+      <tr
+        data-demo="{{ r.is_demo }}"
+        data-search="{{ (r.farmer_id ~ ' ' ~ r.name ~ ' ' ~ r.village) | lower }}"
+      >
+
+        <td>
+          <a href="{{ url_for('farmer', farmer_id=r.farmer_id) }}">
+            {{ r.farmer_id }} · {{ r.name }}
+          </a>
+        </td>
+
+        <td>
+          {{ r.coop_name }}
+        </td>
+
+        <td>
+          {{ r.village }}
+        </td>
+
+        <td
+          data-v="{{ r.trees }}"
+          class="num"
+        >
+          {{ r.trees | rwf }}
+        </td>
+
+        <td
+          data-v="{{ r.latest_kg }}"
+          class="num"
+        >
+          {{ r.latest_kg | kg }}
+        </td>
+
+        <td
+          data-v="{{ r.total_kg }}"
+          class="num"
+        >
+          {{ r.total_kg | kg }}
+        </td>
+
+        <td
+          data-v="{{ r.n_seasons }}"
+          class="num"
+        >
+          {{ r.n_seasons }}
+        </td>
+
+        <td
+          data-v="{{ r.forecast_p50 or 0 }}"
+          class="num"
+        >
+          {{ r.forecast_p50 | kg }}
+        </td>
+
+        <td
+          data-v="{{ r.limit.limit_rwf }}"
+          class="num"
+        >
+          {{ r.limit.limit_rwf | rwf }}
+        </td>
+
+        <td data-v="{{ r.status }}">
+          <span class="pill {{ r.status }}">
+            {{ r.status_label }}
+          </span>
+        </td>
+
+        <td>
+          {{ r.latest_diag or '—' }}
+        </td>
+
+        <td>
+
+          <form
+            action="/diagnose"
+            method="POST"
+            enctype="multipart/form-data"
+            class="diagnosis-form"
+          >
+
+            <input
+              type="hidden"
+              name="farmer_id"
+              value="{{ r.farmer_id }}"
+            >
+
+            <label
+              class="diagnose-btn"
+              title="Choose leaf photo"
+            >
+
+              <span class="diagnose-icon">
+                📷
+              </span>
+
+              <span class="diagnose-text">
+                Diagnose
+              </span>
+
+              <span
+                class="diagnose-spinner"
+                aria-hidden="true"
+              ></span>
+
+              <input
+                type="file"
+                name="image"
+                accept="image/*"
+                required
+                hidden
+                onchange="startDiagnosis(this)"
+              >
+
+            </label>
+
+          </form>
+
+        </td>
+
       </tr>
+
       {% endfor %}
+
     </tbody>
+
   </table>
+
 </section>
+
+
+<style>
+.table-wrap {
+  overflow-x: auto;
+}
+
+#farmers {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#farmers th,
+#farmers td {
+  vertical-align: middle;
+}
+
+#farmers th:last-child,
+#farmers td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.diagnosis-form {
+  margin: 0;
+}
+
+.diagnose-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  min-width: 98px;
+  padding: 7px 10px;
+
+  border: 1px solid #c8cec9;
+  border-radius: 7px;
+
+  background: #fff;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  font-size: 0.82rem;
+  line-height: 1;
+
+  user-select: none;
+}
+
+.diagnose-btn:hover {
+  background: #f3f6f3;
+}
+
+.diagnose-btn.loading {
+  cursor: wait;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.diagnose-spinner {
+  display: none;
+
+  width: 13px;
+  height: 13px;
+
+  border: 2px solid #c7cec8;
+  border-top-color: #1f6b3a;
+  border-radius: 50%;
+
+  animation: diagnosis-spin 0.7s linear infinite;
+}
+
+.diagnose-btn.loading .diagnose-spinner {
+  display: inline-block;
+}
+
+.diagnose-btn.loading .diagnose-icon {
+  display: none;
+}
+
+@keyframes diagnosis-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
+
 {% endblock %}
 
+
 {% block scripts %}
+
 <script>
+
 const table = document.getElementById('farmers');
 const tbody = table.tBodies[0];
+
 const rows = Array.from(tbody.rows);
+
 const search = document.getElementById('search');
 const demoOnly = document.getElementById('demoOnly');
 const count = document.getElementById('count');
 
+
+function startDiagnosis(input) {
+  if (!input.files || !input.files.length) {
+    return;
+  }
+
+  const form = input.form;
+
+  const button = form.querySelector(
+    '.diagnose-btn'
+  );
+
+  const text = form.querySelector(
+    '.diagnose-text'
+  );
+
+  button.classList.add('loading');
+
+  text.textContent = 'Analyzing…';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      form.submit();
+    });
+  });
+}
+
+
 function apply() {
   const q = search.value.trim().toLowerCase();
   const demo = demoOnly.checked;
+
   let shown = 0;
+
   for (const r of rows) {
-    const ok = (!demo || r.dataset.demo === '1') &&
-               (!q || r.dataset.search.includes(q));
+    const ok =
+      (!demo || r.dataset.demo === '1') &&
+      (!q || r.dataset.search.includes(q));
+
     r.style.display = ok ? '' : 'none';
-    if (ok) shown++;
+
+    if (ok) {
+      shown++;
+    }
   }
+
   count.textContent = shown + ' shown';
 }
-search.addEventListener('input', apply);
-demoOnly.addEventListener('change', apply);
 
-table.tHead.addEventListener('click', e => {
-  const th = e.target.closest('th');
-  if (!th) return;
-  const i = Array.from(th.parentNode.children).indexOf(th);
-  const num = th.dataset.sort === 'num';
-  const asc = !(th.dataset.dir === 'asc');
-  th.parentNode.querySelectorAll('th').forEach(h => h.removeAttribute('data-dir'));
-  th.dataset.dir = asc ? 'asc' : 'desc';
-  const val = r => {
-    const cell = r.cells[i];
-    return num ? Number(cell.dataset.v || 0) : (cell.textContent || '').trim().toLowerCase();
-  };
-  rows.sort((a, b) => {
-    const x = val(a), y = val(b);
-    return (x < y ? -1 : x > y ? 1 : 0) * (asc ? 1 : -1);
-  });
-  rows.forEach(r => tbody.appendChild(r));
-});
+
+search.addEventListener(
+  'input',
+  apply
+);
+
+
+demoOnly.addEventListener(
+  'change',
+  apply
+);
+
+
+table.tHead.addEventListener(
+  'click',
+  e => {
+
+    const th = e.target.closest('th');
+
+    if (!th || !th.dataset.sort) {
+      return;
+    }
+
+    const i =
+      Array.from(
+        th.parentNode.children
+      ).indexOf(th);
+
+    const num =
+      th.dataset.sort === 'num';
+
+    const asc =
+      !(th.dataset.dir === 'asc');
+
+
+    th.parentNode
+      .querySelectorAll('th')
+      .forEach(
+        h => h.removeAttribute('data-dir')
+      );
+
+
+    th.dataset.dir =
+      asc ? 'asc' : 'desc';
+
+
+    const val = r => {
+      const cell = r.cells[i];
+
+      return num
+        ? Number(cell.dataset.v || 0)
+        : (cell.textContent || '')
+            .trim()
+            .toLowerCase();
+    };
+
+
+    rows.sort(
+      (a, b) => {
+
+        const x = val(a);
+        const y = val(b);
+
+        return (
+          x < y
+            ? -1
+            : x > y
+              ? 1
+              : 0
+        ) * (
+          asc
+            ? 1
+            : -1
+        );
+      }
+    );
+
+
+    rows.forEach(
+      r => tbody.appendChild(r)
+    );
+  }
+);
+
 
 apply();
+
 </script>
+
 {% endblock %}

@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Review diagnosis — FarmFlow{% endblock %}
+
+{% block content %}
+
+<section class="diagnosis-review">
+
+  <h1>Review leaf diagnosis</h1>
+
+  <p class="sub">
+    Farmer:
+    <strong>
+      {{ farmer_id }} · {{ farmer.name }}
+    </strong>
+  </p>
+
+
+  {% if result.quality != "ok" %}
+
+    <div class="diagnosis-card warning">
+      <h2>Photo needs to be retaken</h2>
+
+      {% if result.quality == "too_dark" %}
+        <p>The photo is too dark.</p>
+      {% elif result.quality == "too_blurry" %}
+        <p>The photo is too blurry.</p>
+      {% else %}
+        <p>The photo could not be analyzed reliably.</p>
+      {% endif %}
+
+      <a href="/" class="action-btn secondary">
+        Back to dashboard
+      </a>
+    </div>
+
+
+  {% elif not result.sure %}
+
+    <div class="diagnosis-card warning">
+      <h2>No confident diagnosis</h2>
+
+      <p>
+        FarmFlow could not identify the issue
+        confidently enough to save a diagnosis.
+      </p>
+
+      <a href="/" class="action-btn secondary">
+        Back to dashboard
+      </a>
+    </div>
+
+
+  {% else %}
+
+    <div class="diagnosis-card">
+
+      <div class="diagnosis-label">
+        AI diagnosis
+      </div>
+
+      <h2>
+        {% if result.diagnosis == "leaf_rust" %}
+          Coffee leaf rust
+        {% elif result.diagnosis == "leaf_miner" %}
+          Coffee leaf miner
+        {% else %}
+          {{ result.diagnosis | replace("_", " ") | title }}
+        {% endif %}
+      </h2>
+
+      <div class="confidence">
+        Confidence:
+        <strong>
+          {{ (result.confidence * 100) | round | int }}%
+        </strong>
+      </div>
+
+      <p class="model-class">
+        Model class: {{ result.class }}
+      </p>
+
+      <div class="review-actions">
+
+        <form
+          action="/diagnose/confirm"
+          method="POST"
+        >
+          <input
+            type="hidden"
+            name="farmer_id"
+            value="{{ farmer_id }}"
+          >
+
+          <input
+            type="hidden"
+            name="diagnosis"
+            value="{{ result.diagnosis }}"
+          >
+
+          <input
+            type="hidden"
+            name="image_filename"
+            value="{{ image_filename }}"
+          >
+
+          <button
+            type="submit"
+            class="action-btn confirm"
+          >
+            Confirm diagnosis
+          </button>
+        </form>
+
+
+        <form
+          action="/diagnose/cancel"
+          method="POST"
+        >
+          <input
+            type="hidden"
+            name="image_filename"
+            value="{{ image_filename }}"
+          >
+
+          <button
+            type="submit"
+            class="action-btn secondary"
+          >
+            Cancel
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+
+  {% endif %}
+
+</section>
+
+
+<style>
+.diagnosis-review {
+  max-width: 620px;
+  margin: 40px auto;
+}
+
+.diagnosis-card {
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid #d9ded9;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.diagnosis-card.warning {
+  border-color: #ddd5b8;
+}
+
+.diagnosis-label {
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+
+.diagnosis-card h2 {
+  margin: 0 0 14px;
+  font-size: 1.8rem;
+}
+
+.confidence {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.model-class {
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+.review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.action-btn {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 7px;
+  border: 1px solid #c8cec9;
+  cursor: pointer;
+  text-decoration: none;
+  font: inherit;
+}
+
+.action-btn.confirm {
+  background: #1f6b3a;
+  border-color: #1f6b3a;
+  color: white;
+}
+
+.action-btn.secondary {
+  background: white;
+  color: #333;
+}
+
+.action-btn:hover {
+  opacity: 0.9;
+}
+</style>
+
+{% endblock %}

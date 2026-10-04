@@ -22,12 +22,13 @@ from flask import Flask, abort, render_template, request
 import dashboard
 from backend.routes.sms_webhook import sms_bp
 from backend.routes.ussd_webhook import ussd_bp
-
+from backend.routes.vision import vision_bp
 app = Flask(__name__)
 
 # Africa's Talking webhook routes
 app.register_blueprint(sms_bp)
 app.register_blueprint(ussd_bp)
+app.register_blueprint(vision_bp)
 _CACHE = {}
 
 
