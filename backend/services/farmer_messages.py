@@ -1,5 +1,5 @@
-import csv
 import json
+import sqlite3
 from datetime import date
 from pathlib import Path
 
@@ -16,10 +16,10 @@ SMS_SCRIPT_PATH = (
     / "sms_script.json"
 )
 
-DIAGNOSES_PATH = (
+DB_PATH = (
     ROOT
     / "data"
-    / "diagnoses.csv"
+    / "farmflow.db"
 )
 
 _model = TextModel()
@@ -32,16 +32,58 @@ with open(
     _sms = json.load(f)
 
 
+def _get_connection():
+    conn = sqlite3.connect(
+        DB_PATH,
+        timeout=10,
+    )
+
+    conn.row_factory = sqlite3.Row
+
+    return conn
+
+
 def _message(
     key: str,
     lang: str = "en",
     **values,
 ):
-    template = _sms["messages"][key][lang]
+    print(
+        "[SMS DEBUG] Building message:",
+        {
+            "key": key,
+            "lang": lang,
+            "values": values,
+        },
+    )
 
-    return template.format(
+    messages = _sms["messages"][key]
+
+    print(
+        "[SMS DEBUG] Available languages:",
+        list(messages.keys()),
+    )
+
+    template = (
+        messages.get(lang)
+        or messages.get("en")
+    )
+
+    print(
+        "[SMS DEBUG] Selected template:",
+        template,
+    )
+
+    response = template.format(
         **values
     )
+
+    print(
+        "[SMS DEBUG] Final response:",
+        response,
+    )
+
+    return response
 
 
 def _diagnosis_name(
@@ -53,7 +95,16 @@ def _diagnosis_name(
         .get(diagnosis, {})
     )
 
-    return (
+    print(
+        "[SMS DEBUG] Diagnosis name lookup:",
+        {
+            "diagnosis": diagnosis,
+            "requested_lang": lang,
+            "available_names": names,
+        },
+    )
+
+    diagnosis_name = (
         names.get(lang)
         or names.get("en")
         or DIAGNOSES.get(
@@ -61,6 +112,13 @@ def _diagnosis_name(
             diagnosis,
         )
     )
+
+    print(
+        "[SMS DEBUG] Diagnosis display name:",
+        diagnosis_name,
+    )
+
+    return diagnosis_name
 
 
 def _save_diagnosis(
@@ -73,33 +131,30 @@ def _save_diagnosis(
         "diagnosis": diagnosis,
     }
 
-    file_exists = (
-        DIAGNOSES_PATH.exists()
+    print(
+        "[SMS DEBUG] Saving diagnosis to SQLite:",
+        row,
     )
 
-    with open(
-        DIAGNOSES_PATH,
-        "a",
-        newline="",
-        encoding="utf-8",
-    ) as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "farmer_id",
-                "date",
-                "diagnosis",
-            ],
+    with _get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO diagnoses (
+                farmer_id,
+                date,
+                diagnosis
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                row["farmer_id"],
+                row["date"],
+                row["diagnosis"],
+            ),
         )
 
-        if not file_exists:
-            writer.writeheader()
-
-        writer.writerow(row)
-
     print(
-        "SMS diagnosis saved:",
-        row,
+        "[SMS DEBUG] Diagnosis saved successfully"
     )
 
 
@@ -108,16 +163,47 @@ def handle_farmer_message(
     text: str,
 ) -> str:
 
+    print("\n" + "=" * 60)
+    print("[SMS DEBUG] Incoming farmer SMS")
+    print("[SMS DEBUG] Phone:", repr(phone))
+    print("[SMS DEBUG] Text:", repr(text))
+
     farmer = find_farmer_by_phone(
         phone
     )
 
-    # For sandbox testing, unknown numbers
-    # can still receive a response.
-    lang = (
-        farmer.get("language", "en")
-        if farmer
-        else "en"
+    print(
+        "[SMS DEBUG] Farmer lookup result:",
+        farmer,
+    )
+
+    if farmer:
+        print(
+            "[SMS DEBUG] Farmer ID:",
+            farmer.get("farmer_id"),
+        )
+
+        print(
+            "[SMS DEBUG] Farmer language field:",
+            repr(
+                farmer.get("language")
+            ),
+        )
+
+    else:
+        print(
+            "[SMS DEBUG] No farmer matched this phone number"
+        )
+
+    # Default to Kinyarwanda for the demo.
+    if farmer:
+        lang = farmer.get("language") or "rw"
+    else:
+        lang = "rw"
+
+    print(
+        "[SMS DEBUG] Selected response language:",
+        repr(lang),
     )
 
     result = _model.classify(
@@ -125,43 +211,93 @@ def handle_farmer_message(
     )
 
     print(
-        "Classification:",
+        "[SMS DEBUG] Classification result:",
         result,
     )
 
     if not result["sure"]:
+        print(
+            "[SMS DEBUG] Model is unsure"
+        )
+
+        centre = (
+            "ikigo cyawe cyo gukusanyirizaho ikawa"
+            if lang == "rw"
+            else "your washing station"
+        )
+
         return _message(
             "noor_unsure",
             lang=lang,
-            centre="your washing station",
+            centre=centre,
         )
 
     diagnosis = result["diagnosis"]
+
+    print(
+        "[SMS DEBUG] Diagnosis:",
+        diagnosis,
+    )
+
+    print(
+        "[SMS DEBUG] Needs confirmation:",
+        diagnosis in NEEDS_CONFIRMATION,
+    )
 
     diagnosis_name = _diagnosis_name(
         diagnosis,
         lang,
     )
 
-    # Save confident SMS diagnosis for a
-    # registered farmer.
+    # Do not persist diagnoses that still require
+    # a photo / co-op confirmation.
+    if diagnosis in NEEDS_CONFIRMATION:
+        print(
+            "[SMS DEBUG] Not saving yet - "
+            "vision confirmation required"
+        )
+
+        centre = (
+            "ikigo cyawe cyo gukusanyirizaho ikawa"
+            if lang == "rw"
+            else "your washing station"
+        )
+
+        return _message(
+            "noor_likely_bring_leaves",
+            lang=lang,
+            diagnosis=diagnosis_name,
+            centre=centre,
+        )
+
+    # Save only confident diagnoses that do not
+    # require further confirmation.
     if (
         farmer
         and diagnosis
         and diagnosis != "unknown"
     ):
+        print(
+            "[SMS DEBUG] Diagnosis qualifies for SQLite save"
+        )
+
         _save_diagnosis(
             farmer_id=farmer["farmer_id"],
             diagnosis=diagnosis,
         )
 
-    if diagnosis in NEEDS_CONFIRMATION:
-        return _message(
-            "noor_likely_bring_leaves",
-            lang=lang,
-            diagnosis=diagnosis_name,
-            centre="your washing station",
+    else:
+        print(
+            "[SMS DEBUG] Diagnosis NOT saved:",
+            {
+                "farmer_found": bool(farmer),
+                "diagnosis": diagnosis,
+            },
         )
+
+    print(
+        "[SMS DEBUG] Using no-photo response"
+    )
 
     return _message(
         "noor_likely_no_photo",

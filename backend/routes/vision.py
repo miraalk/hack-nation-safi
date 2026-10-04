@@ -1,5 +1,5 @@
+import sqlite3
 import time
-from csv import DictWriter
 from datetime import date
 from pathlib import Path
 from uuid import uuid4
@@ -16,12 +16,27 @@ vision_bp = Blueprint("vision", __name__)
 ROOT = Path(__file__).resolve().parents[2]
 
 UPLOAD_DIR = ROOT / "data" / "leaf_images"
-DIAGNOSES_PATH = ROOT / "data" / "diagnoses.csv"
+DB_PATH = ROOT / "data" / "farmflow.db"
 
 UPLOAD_DIR.mkdir(
     parents=True,
     exist_ok=True,
 )
+
+
+# ---------------------------------------------------------
+# Database
+# ---------------------------------------------------------
+
+def get_connection():
+    conn = sqlite3.connect(
+        DB_PATH,
+        timeout=10,
+    )
+
+    conn.row_factory = sqlite3.Row
+
+    return conn
 
 
 # ---------------------------------------------------------
@@ -62,7 +77,9 @@ def diagnose():
         "",
     ).strip().upper()
 
-    image = request.files.get("image")
+    image = request.files.get(
+        "image"
+    )
 
     if not farmer_id:
         return "Missing farmer_id", 400
@@ -111,7 +128,9 @@ def diagnose():
 
     save_start = time.perf_counter()
 
-    image.save(image_path)
+    image.save(
+        image_path
+    )
 
     print(
         f"Image save: "
@@ -258,7 +277,7 @@ def confirm_diagnosis():
     )
 
     print(
-        f"Diagnosis CSV save: "
+        f"Diagnosis SQLite save: "
         f"{time.perf_counter() - save_start:.3f}s"
     )
 
@@ -315,33 +334,25 @@ def save_diagnosis(
         "diagnosis": diagnosis,
     }
 
-    file_exists = (
-        DIAGNOSES_PATH.exists()
-    )
-
-    with open(
-        DIAGNOSES_PATH,
-        "a",
-        newline="",
-        encoding="utf-8",
-    ) as f:
-
-        writer = DictWriter(
-            f,
-            fieldnames=[
-                "farmer_id",
-                "date",
-                "diagnosis",
-            ],
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO diagnoses (
+                farmer_id,
+                date,
+                diagnosis
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                row["farmer_id"],
+                row["date"],
+                row["diagnosis"],
+            ),
         )
 
-        if not file_exists:
-            writer.writeheader()
-
-        writer.writerow(row)
-
     print(
-        "Saved diagnosis:",
+        "Saved diagnosis to SQLite:",
         row,
     )
 
