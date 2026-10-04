@@ -38,12 +38,23 @@
   {% elif not result.sure %}
 
     <div class="diagnosis-card warning">
-      <h2>No confident diagnosis</h2>
+
+      <div class="diagnosis-label">Not sure</div>
+
+      <h2>Ask the coop team</h2>
 
       <p>
-        FarmFlow could not identify the issue
-        confidently enough to save a diagnosis.
+        FarmFlow isn’t confident enough to diagnose this leaf, so it won’t
+        suggest a treatment or credit. Please keep the leaves and ask the
+        coop team — or the extension officer — to take a look.
       </p>
+
+      {% if result.confidence and result.class %}
+      <p class="model-class">
+        Closest guess: {{ result.class }}
+        ({{ (result.confidence * 100) | round | int }}%), below the confidence threshold.
+      </p>
+      {% endif %}
 
       <a href="/" class="action-btn secondary">
         Back to dashboard
